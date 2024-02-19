@@ -1,6 +1,5 @@
- 
-import {render} from "./core"
-import {MyComponent} from "./mycomp"
 
+import { render } from "@solenopsys/converged/jsx-runtime";
+import { MyComponent } from "./mycomp";
 
-render(MyComponent, document.getElementById("layout"));
+render(MyComponent, "body", document);
