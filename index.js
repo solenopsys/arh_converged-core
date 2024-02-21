@@ -2,10 +2,16 @@
 var render = function(comp, selector, dom) {
   const body = dom.querySelector(selector);
   const element = comp({});
-  body.appendChild(element);
+  setInterval(() => {
+    console.log("APPEND CHILD");
+    body.appendChild(element);
+  }, 1000);
 };
 var jsx = function(type, props, p2, last, p4, owner) {
   const dom = document;
+  if (typeof type === "function") {
+    return type();
+  }
   const element = dom.createElement(type);
   if (props.style)
     element.setAttribute("style", props.style);
@@ -20,7 +26,9 @@ var jsx = function(type, props, p2, last, p4, owner) {
       if (typeof child === "string") {
         element.appendChild(document.createTextNode(child));
       } else if (typeof child === "number") {
-        element.appendChild(document.createTextNode(child + ""));
+        console.log("NUMCHILD", child);
+        const newLocal = document.createTextNode(child + "[nub]");
+        element.appendChild(newLocal);
       } else {
         element.appendChild(child);
       }
@@ -80,6 +88,12 @@ function createEffect(fn) {
 var context = [];
 
 // src/mycomp.tsx
+function MyComponent1(props) {
+  return jsx("div", {
+    style: "border:1px;",
+    children: "OK2"
+  }, undefined, false, undefined, this);
+}
 function MyComponent(props) {
   const [count, setCount] = createSignal(0);
   createEffect(() => {
@@ -102,7 +116,8 @@ function MyComponent(props) {
           "Click Me ",
           count()
         ]
-      }, undefined, true, undefined, this)
+      }, undefined, true, undefined, this),
+      jsx(MyComponent1, {}, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
