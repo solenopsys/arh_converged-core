@@ -1,64 +1,57 @@
 import { DomManipulate } from "./api";
+import { createEffect } from "./reactive";
+import { jsx } from 'src/converged/jsx';
 
-interface Jsxo { elementName: string, props: any }
+interface Jsxo { elementName: string | any, props: any }
 
-function childConvert(child: any, dom: DomManipulate): Element {
+
+function insertChild(child: any, dom: DomManipulate, parent: Element) {
     const t: string = typeof child;
-  //  console.log("TYPE ", t, " CHILD ", child)
-    switch (t) {
-        case 'string':
-            return dom.createTextNode(child);
-        case 'number':
-            return dom.createTextNode(child.toString());
-        case 'function':
-            return dom.createTextNode(child());
-        case 'object':
-            return convertJsxToDom(child);
-        default:
-            throw new Error('Unsupported type: ' + t);
-    }
-}
 
-function componentConvert(elementName: any, dom: DomManipulate): Element {
-        //     return  renderEffect(() => {
-    //    //   let v = type();
-    //    //   while (typeof v === "function") v = v();
-          
-    //     });
-    return convertJsxToDom(elementName({}));
+    if (t === 'string') {
+        parent.appendChild(dom.createTextNode(child));
+    } else if (t === 'number') {
+        parent.appendChild(dom.createTextNode(child.toString()));
+    } else if (t === 'function') {
+        parent.appendChild(dom.createTextNode(child()));
+    } else if (t === 'object') {
+        convertJsxToDom(child, dom, parent);
+    } else
+        throw new Error('Unsupported type: ' + t);
 }
 
 
-export function convertJsxToDom(obj: Jsxo): Element {
-    const dom: DomManipulate = document;
+export function convertJsxToDom(obj: Jsxo, dom: DomManipulate, parent: Element) {
+    let elementName = obj.elementName;
+    let input: any = obj.props;
+    let newElement;
 
-    const elementName = obj.elementName;
-    const input: any = obj.props;
+    const effect = () => {
+        if (typeof elementName === 'function') {
+            const comp: any = elementName({});
+            input = comp.props;
+            newElement = dom.createElement(comp.elementName);
+        } else {
+            newElement = dom.createElement(elementName);
+        }
+        parent.appendChild(newElement)
+    };
 
-    if (typeof elementName === 'function') {
-        return componentConvert(elementName,dom) 
-    }
-
-    const element = dom.createElement(elementName);
+    createEffect(effect)
 
     for (let name in input) {
         if (name.startsWith("on")) {
             const eventName = name.substring(2).toLowerCase()
-            element.addEventListener(eventName, input[name]);
-            continue
-        }
-
-        if (name === "children") {
+            newElement.addEventListener(eventName, input[name]);
+        } else if (name === "children") {
             if (Array.isArray(input.children)) {
-                for (let child of input.children) element.appendChild(childConvert(child, dom));
+                for (let child of input.children)
+                    insertChild(child, dom, newElement)
             } else {
-                element.appendChild(childConvert(input.children,dom))
+                insertChild(input.children, dom, newElement)
             }
-
-            continue
+        } else {
+            newElement.setAttribute(name, input[name])
         }
-
-        element.setAttribute(name, input[name])
     }
-    return element
 }

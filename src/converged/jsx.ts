@@ -2,11 +2,10 @@ import { DomManipulate } from "./api";
 import { convertJsxToDom } from "./converter";
 
 
-function render(comp: (props: any) => JSX.Element, selector: string, dom: DomManipulate) {
+function render(comp: any, selector: string, dom: DomManipulate) {
   const body = dom.querySelector(selector)
-  //@ts-ignore
-  const element = convertJsxToDom( comp({}))
-  body.appendChild(element as Element)
+
+  convertJsxToDom( { elementName: comp, props: {} } , dom, body)
 }
 
 

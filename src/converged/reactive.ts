@@ -12,10 +12,12 @@ export function createSignal<T>(value: T): [() => T, (nextValue: T) => void] {
     const read = () => {
         const running = context[context.length - 1];
         if (running) subscribe(running, subscriptions);
+        console.log("READ SIGNAL VALUE:",value)
         return value;
     };
 
     const write = (nextValue: T) => {
+      console.log("WRITE SIGNAL VALUE:",nextValue)
         value = nextValue;
 
         for (const sub of [...subscriptions]) {

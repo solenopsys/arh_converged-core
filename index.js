@@ -1,1 +1,153 @@
-var H=function(w,D){const E=typeof w;switch(E){case"string":return D.createTextNode(w);case"number":return D.createTextNode(w.toString());case"function":return D.createTextNode(w());case"object":return B(w);default:throw new Error("Unsupported type: "+E)}};function B(w){const D=document,E=w.elementName,q=w.props;if(typeof E==="function")return B(E({}));const k=D.createElement(E);for(let z in q){if(z.startsWith("on")){const G=z.substring(2).toLowerCase();k.addEventListener(G,q[z]);continue}if(z==="children"){if(Array.isArray(q.children))for(let G of q.children)k.appendChild(H(G,D));else k.appendChild(H(q.children,D));continue}k.setAttribute(z,q[z])}return k}var I=function(w,D,E){const q=E.querySelector(D),k=B(w({}));q.appendChild(k)},A=function(w,D,E,q,k,z){return{elementName:w,props:D}};var O=function(w,D){D.add(w),w.dependencies.add(D)};function J(w){const D=new Set;return[()=>{const k=F[F.length-1];if(k)O(k,D);return w},(k)=>{w=k;for(let z of[...D])z.execute()}]}var P=function(w){for(let D of w.dependencies)D.delete(w);w.dependencies.clear()};function K(w){const D=()=>{P(E),F.push(E);try{w()}finally{F.pop()}},E={execute:D,dependencies:new Set};D()}var F=[];function R(w){return A("div",{style:"border:1px;",children:"OK2"},void 0,!1,void 0,this)}function L(w){const[D,E]=J(0);return K(()=>{console.log("The count is now",D())}),A("div",{style:"border:1px;",children:[A("div",{children:"Create div"},void 0,!1,void 0,this),A("table",{children:A("td",{children:"ok10"},void 0,!1,void 0,this)},void 0,!1,void 0,this),A("button",{onClick:()=>E(D()+1),children:["Click Me ",D()]},void 0,!0,void 0,this),A(R,{},void 0,!1,void 0,this)]},void 0,!0,void 0,this)}I(L,"body",document);
+// src/converged/reactive.ts
+var subscribe = function(running, subscriptions) {
+  subscriptions.add(running);
+  running.dependencies.add(subscriptions);
+};
+function createSignal(value) {
+  const subscriptions = new Set;
+  const read = () => {
+    const running = context[context.length - 1];
+    if (running)
+      subscribe(running, subscriptions);
+    return value;
+  };
+  const write = (nextValue) => {
+    value = nextValue;
+    for (const sub of [...subscriptions]) {
+      sub.execute();
+    }
+  };
+  return [read, write];
+}
+var cleanup = function(running) {
+  for (const dep of running.dependencies) {
+    dep.delete(running);
+  }
+  running.dependencies.clear();
+};
+function createEffect(fn) {
+  console.log("EFF");
+  const execute = () => {
+    cleanup(running);
+    context.push(running);
+    try {
+      fn();
+    } finally {
+      context.pop();
+    }
+  };
+  const running = {
+    execute,
+    dependencies: new Set
+  };
+  execute();
+}
+var context = [];
+
+// src/converged/converter.ts
+var childConvert2 = function(child, dom, parent) {
+  const t = typeof child;
+  console.log("CHILD TYPE: ", t);
+  console.log("CHILD VALUE: ", child);
+  if (t === "string") {
+    parent.appendChild(dom.createTextNode(child));
+    return;
+  }
+  if (t === "number") {
+    parent.appendChild(dom.createTextNode(child.toString()));
+    return;
+  }
+  if (t === "function") {
+    parent.appendChild(dom.createTextNode(child()));
+    return;
+  }
+  if (t === "object") {
+    convertJsxToDom(child, dom, parent);
+    return;
+  }
+  throw new Error("Unsupported type: " + t);
+};
+function convertJsxToDom(obj, dom, parent) {
+  console.log("CONVERSION RUN", obj);
+  let elementName = obj.elementName;
+  let input = obj.props;
+  let element;
+  const newLocalFunction = () => {
+    if (typeof elementName === "function") {
+      const obj2 = elementName({});
+      console.log("IN EFFECT", obj2);
+      input = obj2.props;
+      element = dom.createElement(obj2.elementName);
+    } else {
+      element = dom.createElement(elementName);
+    }
+    parent.appendChild(element);
+  };
+  createEffect(newLocalFunction);
+  for (let name in input) {
+    if (name.startsWith("on")) {
+      const eventName = name.substring(2).toLowerCase();
+      element.addEventListener(eventName, input[name]);
+      continue;
+    }
+    if (name === "children") {
+      if (Array.isArray(input.children)) {
+        for (let child of input.children) {
+          console.log("IN ARRAY");
+          childConvert2(child, dom, element);
+        }
+      } else {
+        childConvert2(input.children, dom, element);
+      }
+      continue;
+    }
+    element.setAttribute(name, input[name]);
+  }
+}
+
+// src/converged/jsx.ts
+var render = function(comp, selector, dom) {
+  const body = dom.querySelector(selector);
+  convertJsxToDom({ elementName: comp, props: {} }, dom, body);
+};
+var jsx = function(type, props, p2, last, p4, owner) {
+  return { elementName: type, props };
+};
+
+// src/mycomp.tsx
+function MyComponent1(props) {
+  return jsx("div", {
+    style: "border:1px;",
+    children: "OK2"
+  }, undefined, false, undefined, this);
+}
+function MyComponent(props) {
+  const [count, setCount] = createSignal(0);
+  createEffect(() => {
+    console.log("The count is now", count());
+  });
+  return jsx("div", {
+    style: "border:1px;",
+    children: [
+      jsx("div", {
+        children: "Create div"
+      }, undefined, false, undefined, this),
+      jsx("table", {
+        children: jsx("td", {
+          children: "ok10"
+        }, undefined, false, undefined, this)
+      }, undefined, false, undefined, this),
+      jsx("button", {
+        onClick: () => setCount(count() + 1),
+        children: [
+          "Click Me ",
+          count()
+        ]
+      }, undefined, true, undefined, this),
+      jsx(MyComponent1, {}, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/index.tsx
+render(MyComponent, "body", document);

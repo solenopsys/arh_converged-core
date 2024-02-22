@@ -7,7 +7,10 @@ test("signal", () => {
     const [count, setCount] = createSignal(3)
     expect(count()).toBe(3);
     setCount(5);
+    expect(count()).toBe(5);
 });
+
+
 
 test("effect", () => {
     const [count, setCount] = createSignal(3)

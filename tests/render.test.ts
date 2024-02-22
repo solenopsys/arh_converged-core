@@ -77,3 +77,45 @@ test('test render', () => {
 });
 
 
+let setCountGlobal;
+let getCountGlobal;
+
+function RerenderTest(props) {
+  const [count, setCount] = createSignal(0);
+  setCountGlobal=setCount;
+  getCountGlobal=count;
+  return jsx("div", {
+    style: "border:1px;",
+    children: [
+      jsx("div", {
+        children:  count()
+      }, undefined, false, undefined, this),
+    ]
+  }, undefined, true, undefined, this);
+}
+
+
+
+test('test rerender', () => {
+  const dom: DomManipulate = document;
+  document.body.innerHTML = `<body></body>`;
+  render(RerenderTest, "body", dom);
+  const div = document.querySelector('div');
+  expect(div.getAttribute("style")).toEqual('border:1px;');
+  const nodes = div.childNodes;
+  expect(nodes.length).toEqual(1);
+
+  const subDiv = nodes[0];
+  expect(subDiv.nodeName).toEqual("DIV");
+  expect(subDiv.childNodes.length).toEqual(1);
+  expect(subDiv.childNodes[0].textContent).toEqual("0");
+
+  console.log("--------------------------")
+  setCountGlobal(1)
+  getCountGlobal()
+  expect(getCountGlobal()).toEqual(1);
+
+  const subDiv2 = nodes[0];
+  expect(subDiv2.childNodes[0].textContent).toEqual("1");
+
+});
