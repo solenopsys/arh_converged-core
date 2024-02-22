@@ -1,5 +1,7 @@
 
-import { domConverter, jsx, render } from "../src/converged/jsx";
+import {  jsx, render } from "../src/converged/jsx";
+
+import {convertJsxToDom} from "../src/converged/converter";
 
 
 function InsideTestComponent(props) {
@@ -17,7 +19,7 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 GlobalRegistrator.register();
 
 
-const result = domConverter(null, InsideTestComponent, {})
+const result = convertJsxToDom( InsideTestComponent({}))
 console.log("test dom convetor", result)
 
 

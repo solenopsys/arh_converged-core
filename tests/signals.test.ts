@@ -1,5 +1,7 @@
-import { expect, test } from "bun:test";
+import { expect, test,jest } from "bun:test";
 import { createEffect, createSignal } from "../src/converged/reactive";
+
+ 
 
 test("signal", () => {
     const [count, setCount] = createSignal(3)
@@ -18,5 +20,4 @@ test("effect", () => {
 });
 
 
-
-
+ 
