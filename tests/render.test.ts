@@ -1,8 +1,7 @@
-import { createEffect, createSignal } from "../src/converged/reactive/signal";
+import { createEffect, createSignal } from "../src/converged/reactive";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { test, expect } from 'bun:test';
-import { DomManipulate } from "src/converged/api";
-import { domConverter, jsx, render } from "src/converged/jsx";
+import { DomManipulate, render, jsx } from "src/converged/rendering";
 
 GlobalRegistrator.register();
 
@@ -82,13 +81,13 @@ let getCountGlobal;
 
 function RerenderTest(props) {
   const [count, setCount] = createSignal(0);
-  setCountGlobal=setCount;
-  getCountGlobal=count;
+  setCountGlobal = setCount;
+  getCountGlobal = count;
   return jsx("div", {
     style: "border:1px;",
     children: [
       jsx("div", {
-        children:  count()
+        children: count()
       }, undefined, false, undefined, this),
     ]
   }, undefined, true, undefined, this);
@@ -97,6 +96,7 @@ function RerenderTest(props) {
 
 
 test('test rerender', () => {
+  //@ts-ignore
   const dom: DomManipulate = document;
   document.body.innerHTML = `<body></body>`;
   render(RerenderTest, "body", dom);
