@@ -1,5 +1,5 @@
 
-import * as core from "./converged/reactive";
+import * as core from "./converged/reactive/signal";
 
 export function MyComponent1(props) {
   return <div style="border:1px;">

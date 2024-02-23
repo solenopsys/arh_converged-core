@@ -11,8 +11,8 @@
     "isolatedModules": true,
     "baseUrl": "./",
     "paths": {
-      "@solenopsys/converged/jsx-dev-runtime":["src/converged/jsx.ts"],
-      "@solenopsys/converged/jsx-runtime":["src/converged/jsx.ts"]
+      "@solenopsys/converged/jsx-dev-runtime":["src/converged/rendering/jsx.ts"],
+      "@solenopsys/converged/jsx-runtime":["src/converged/rendering/jsx.ts"]
 
     }
   }

@@ -1,5 +1,5 @@
 import { expect, test,jest } from "bun:test";
-import { createEffect, createSignal } from "../src/converged/reactive";
+import { createEffect, createSignal } from "../src/converged/reactive/signal";
 
  
 

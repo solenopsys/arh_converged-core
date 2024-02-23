@@ -1,4 +1,4 @@
-import { createEffect, createSignal } from "../src/converged/reactive";
+import { createEffect, createSignal } from "../src/converged/reactive/signal";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { test, expect } from 'bun:test';
 import { DomManipulate } from "src/converged/api";
