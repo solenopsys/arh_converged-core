@@ -15,6 +15,7 @@ export {
     flat,
     stringify,
     iterator,
+    markReactive,
     isReactive,
     isComponent,
     isComponentable,
@@ -81,6 +82,11 @@ const stringify = JSON.stringify
 const iterator = Symbol.iterator
 const keys = Object.keys
 
+ function markReactive(fn) {
+	fn[$reactive] = null
+	return fn
+}
+
 function weakStore() {
     const store = new WeakMap()
     const set = store.set.bind(store)
@@ -88,7 +94,7 @@ function weakStore() {
     const has = store.has.bind(store)
     return {
         store,
-        get: (obj, defaults = undefined) => {
+        get: (obj, defaults:any = undefined) => {
             const o = get(obj)
             if (o) return o
             if (defaults !== undefined) {

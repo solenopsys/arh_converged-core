@@ -1,17 +1,8 @@
-export interface Elements{
-    style:any
-    removeAttributeNS:any
-    removeAttribute:any
-    setAttributeNS:any
-    addEventListener:any
-    removeEventListener:any
-    classList:any
-    setAttribute:any
-    localName:any
-} 
-
+export interface Elements {
+    [key: string]: any;
+}
 export interface Props{
-    
+    [key: string]: any;
 }
 
 // ? node.removeAttributeNS(NS[ns], name)

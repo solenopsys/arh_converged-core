@@ -1,6 +1,7 @@
 
-import { render } from "solidjs-example/dom/client";
-import { createEffect, createSignal } from "./converged/reactive";
+ 
+import { effect } from "solidjs-example/core";
+import { signal } from "./converged/solid";
 
 export function MyComponent1(props) {
   return <div style="border:1px;">  OK2
@@ -10,10 +11,10 @@ export function MyComponent1(props) {
 
 
 export function MyComponent(props) {
-  const [count, setCount] = createSignal(0);
+  const [count, setCount] = signal(0);
 
 
-  createEffect(() => {
+  effect(() => {
     console.log('The count is now', count());
   });
 
@@ -31,24 +32,7 @@ export abstract class JSXEXP{
 
 }
 
-
-export class MyComponent0 extends JSXEXP{
-    [count, setCount] = createSignal(0);
-
-
-  // createEffect(() => {
-  //   console.log('The count is now', count());
-  // });
-
-
-  render(){
-    return <div style="border:1px;">
-    <div>Create div</div><table><td>ok10</td></table>
-    <button onClick={() => setCount(count() + 1)}>Click Me {count()}</button>
-    <MyComponent1></MyComponent1>
-  </div>;
-  } 
-}
+ 
 
 
 

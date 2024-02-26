@@ -1,6 +1,8 @@
 
-import { render } from "@solenopsys/converged/jsx-runtime";
+import { render } from "./converged/renderer";
 import { MyComponent,MyComponent0 } from "./mycomp";
 
-render(MyComponent, "body", document);
-render(MyComponent0, "body", document);
+
+
+render(MyComponent,  document.querySelector('body'));
+ 

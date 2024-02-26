@@ -1,30 +1,30 @@
-// REACTIVITE PRIMITIVES
-
 import {
-	root,
-	renderEffect,
-	cleanup,
-	untrack,
-	signal,
-	memo,
-	withOwner,
-	owner,
-	Context,
+    root,
+    renderEffect,
+    cleanup,
+    untrack,
+    signal,
+    memo,
+    withOwner,
+    owner,
+    Context,
 } from './solid'
 
-import { isReactive ,
+import {
+    isReactive,
     empty,
-	isArray,
-	toArray,
-	isFunction,
-	weakStore,
-	freeze,
-	flat,
-	stringify,
+    isArray,
+    toArray,
+    isFunction,
+    weakStore,
+    freeze,
+    flat,
+    stringify,
     isComponent,
-	iterator,
+    iterator,
     isComponentable,
-    markComponent} from './utils'
+    markComponent
+} from './utils'
 
 // CONSTANTS
 
@@ -33,20 +33,21 @@ import { $class, $map, NS } from './constants'
 
 // RENDERER LIB
 
-
-
 import { ready } from './scheduler'
 
 // PROPERTIES / ATTRIBUTES
 
 import { assignProps } from './props'
 
+import { Props } from './props/intfs'
+
+
 // ELEMENTS
 
 import {
-	createElement,
-	createElementNS,
-	createTextNode,
+    createElement,
+    createElementNS,
+    createTextNode,
 } from './elements'
 
 // STATE
@@ -55,8 +56,9 @@ const Components = new Map()
 const WeakComponents = new WeakMap()
 const defaultProps = freeze(empty())
 const useXMLNS = context()
-
-// COMPONENTS
+import { markReactive } from './utils';
+import { Elements } from './props/intfs'
+import { Signal } from '../../converged-signals/src/index'
 
 /**
  * Used by the JSX transform, as <>...</> or <Fragment>...</Fragment>.
@@ -64,42 +66,38 @@ const useXMLNS = context()
  * transformer and we dont even need to run it. Avoid the temptation
  * to replace this for `noop` from `lib`.
  */
-export const Fragment = () => {}
+export const Fragment = () => { };
 
 /**
  * Creates components for things. When props argument is given, the
  * props become fixed. When props argument is ommited, it allows you
  * to keep calling the returned function with new props.
- *
- * @param {string | Function | Element | object} value - Component
- * @param {any} [props] Object
- * @url https://pota.quack.uy/Component
  */
 
-export function Component(value, props = undefined) {
-	/**
-	 * Internal comment: Returns a function because we need to render
-	 * from parent to children instead of from children to parent. This
-	 * allows to properly set the reactivity tree (think of nested
-	 * effects that clear inner effects, context, etc).
-	 */
-	// special case fragments, these are arrays and dont need untrack nor props
-	if (value === Fragment) {
-		return props.children
-	}
+export function Component(value: string | Function | Element | object, props: any = undefined) {
+    /**
+     * Internal comment: Returns a function because we need to render
+     * from parent to children instead of from children to parent. This
+     * allows to properly set the reactivity tree (think of nested
+     * effects that clear inner effects, context, etc).
+     */
+    // special case fragments, these are arrays and dont need untrack nor props
+    if (value === Fragment) {
+        return props.children;
+    }
 
-	// freeze props so isnt directly writable
-	freeze(props)
+    // freeze props so isnt directly writable
+    Object.freeze(props);
 
-	/**
-	 * Create a callable function to pass `props`. When props its not
-	 * defined it allows the user to make a Factory of components, when
-	 * props its defined the props are fixed.
-	 */
+    /**
+     * Create a callable function to pass `props`. When props its not
+     * defined it allows the user to make a Factory of components, when
+     * props its defined the props are fixed.
+     */
 
-	return props === undefined
-		? Factory(value)
-		: markComponent(Factory(value).bind(null, props))
+    return props === undefined
+        ? Factory(value)
+        : markComponent(Factory(value).bind(null, props));
 }
 
 /**
@@ -110,73 +108,73 @@ export function Component(value, props = undefined) {
  * @returns {Component}
  */
 
-function Factory(value) {
-	if (isComponent(value)) {
-		return value
-	}
+function Factory(value: any) {
+    if (isComponent(value)) {
+        return value;
+    }
 
-	let component =
-		typeof value === 'object'
-			? WeakComponents.get(value)
-			: Components.get(value)
-	if (component) {
-		return component
-	}
+    let component =
+        typeof value === 'object'
+            ? WeakComponents.get(value)
+            : Components.get(value);
+    if (component) {
+        return component;
+    }
 
-	switch (typeof value) {
-		case 'string': {
-			// a string component, 'div' becomes <div>
-			component = (props = defaultProps) => createTag(value, props)
-			break
-		}
-		case 'function': {
-			if ($class in value) {
-				// a class component <MyComponent../>
-				component = (props = defaultProps) =>
-					untrack(() => {
-						const i = new value()
-						i.ready && ready(i.ready.bind(i))
-						i.cleanup && cleanup(i.cleanup.bind(i))
+    switch (typeof value) {
+        case 'string': {
+            // a string component, 'div' becomes <div>
+            component = (props = defaultProps) => createTag(value, props);
+            break;
+        }
+        case 'function': {
+            if ($class in value) {
+                // a class component <MyComponent../>
+                component = (props = defaultProps) =>
+                    untrack(() => {
+                        const i = new value();
+                        i.ready && ready(i.ready.bind(i));
+                        i.cleanup && cleanup(i.cleanup.bind(i));
 
-						return i.render(props)
-					})
-				break
-			}
+                        return i.render(props);
+                    });
+                break;
+            }
 
-			/**
-			 * ```js
-			 * const [Count, setCount] = signal(1)
-			 * return <Count />
-			 * ```
-			 */
-			if (isReactive(value)) {
-				component = () => value
-				break
-			}
+            /**
+             * ```js
+             * const [Count, setCount] = signal(1)
+             * return <Count />
+             * ```
+             */
+            if (isReactive(value)) {
+                component = () => value;
+                break;
+            }
 
-			// a function component <MyComponent../>
-			component = (props = defaultProps) =>
-				untrack(() => value(props))
-			break
-		}
-		default: {
-			if (value instanceof Node) {
-				// an actual node component <div>
-				component = (props = defaultProps) => createNode(value, props)
-				break
-			}
+            // a function component <MyComponent../>
+            component = (props = defaultProps) =>
+                untrack(() => value(props));
+            break;
+        }
+        default: {
+            if (value instanceof Node) {
+                // an actual node component <div>
+                component = (props = defaultProps) => createNode(value, props);
+                break;
+            }
 
-			component = () => value
-			break
-		}
-	}
+            component = () => value;
+            break;
+        }
+    }
 
-	// save in cache
-	typeof value === 'object'
-		? WeakComponents.set(value, component)
-		: Components.set(value, component)
+    // save in cache
+    typeof value === 'object'
+        ? WeakComponents.set(value, component)
+        : Components.set(value, component);
 
-	return markComponent(component)
+    return markComponent(component);
 }
 
 /**
@@ -186,33 +184,33 @@ function Factory(value) {
  * @param {Props} props
  * @returns {Elements} Element
  */
-function createTag(tagName, props) {
-	// namespace
-	// use props xmlns or special case svg, math, etc in case of missing xmlns attribute
-	const ns = props.xmlns || NS[tagName]
-	const nsContext = useXMLNS()
+function createTag(tagName: string, props: Props): Elements {
+    // namespace
+    // use props xmlns or special case svg, math, etc in case of missing xmlns attribute
+    const ns = props.xmlns || NS[tagName];
+    const nsContext = useXMLNS();
 
-	if (ns && ns !== nsContext) {
-		// the ns changed, use the new xmlns
-		return useXMLNS(ns, () =>
-			createNode(createElementNS(ns, tagName), props),
-		)
-	}
+    if (ns && ns !== nsContext) {
+        // the ns changed, use the new xmlns
+        return useXMLNS(ns, () =>
+            createNode(createElementNS(ns, tagName), props),
+        );
+    }
 
-	// foreignObject is created with current xmlns
-	// reset back to html (default browser behaviour)
-	if (nsContext && tagName === 'foreignObject') {
-		return useXMLNS(NS.html, () =>
-			createNode(createElementNS(nsContext, tagName), props),
-		)
-	}
+    // foreignObject is created with current xmlns
+    // reset back to html (default browser behaviour)
+    if (nsContext && tagName === 'foreignObject') {
+        return useXMLNS(NS.html, () =>
+            createNode(createElementNS(nsContext, tagName), props),
+        );
+    }
 
-	return createNode(
-		nsContext
-			? createElementNS(nsContext, tagName)
-			: createElement(tagName),
-		props,
-	)
+    return createNode(
+        nsContext
+            ? createElementNS(nsContext, tagName)
+            : createElement(tagName),
+        props,
+    );
 }
 
 /**
@@ -222,168 +220,162 @@ function createTag(tagName, props) {
  * @param {Props} props
  * @returns {Elements} Element
  */
-function createNode(node, props) {
-	// assign the props to the node
-	assignProps(node, props)
+function createNode(node: Elements, props: any): Elements {
+    // assign the props to the node
+    assignProps(node, props);
 
-	createChildren(node, props.children)
+    createChildren(node, props.children);
 
-	return node
+    return node;
 }
 
-/**
- * Creates the children for a parent
- *
- * @param {Elements} parent
- * @param {Children} child
- * @param {boolean} [relative]
- * @returns {Children}
- */
-function createChildren(parent, child, relative) {
-	switch (typeof child) {
-		// string/number
-		case 'string':
-		case 'number': {
-			return insertNode(parent, createTextNode(child), relative)
-		}
+//  Creates the children for a parent
+  
+function createChildren(parent: Elements, child: any, relative?: boolean): any {
+    switch (typeof child) {
+        // string/number
+        case 'string':
+        case 'number': {
+            return insertNode(parent, createTextNode(child), relative);
+        }
 
-		case 'function': {
-			// component
-			if (isComponent(child)) {
-				return createChildren(parent, child(), relative)
-			}
+        case 'function': {
+            // component
+            if (isComponent(child)) {
+                return createChildren(parent, child(), relative);
+            }
 
-			let node
+            let node;
 
-			// For
-			if ($map in child) {
-				// signal: needs an effect
-				renderEffect(() => {
-					node = child(child => {
-						/**
-						 * Wrap the item with placeholders, to avoid resolving and
-						 * for easy re-arrangement
-						 */
-						const begin = createPlaceholder(
-							parent,
-							null /*begin*/,
-							true,
-						)
-						const end = createPlaceholder(parent, null /*end*/, true)
+            // For
+            if ($map in child) {
+                // signal: needs an effect
+                renderEffect(() => {
+                    node = child(child => {
+                        /**
+                         * Wrap the item with placeholders, to avoid resolving and
+                         * for easy re-arrangement
+                         */
+                        const begin = createPlaceholder(
+                            parent,
+                            null /*begin*/,
+                            true,
+                        );
+                        const end = createPlaceholder(parent, null /*end*/, true);
 
-						return [begin, createChildren(end, child, true), end]
-					})
-				})
-				return node
-			}
+                        return [begin, createChildren(end, child, true), end];
+                    });
+                });
+                return node;
+            }
 
-			// signal/memo/external/user provided function
-			// needs placeholder to stay in position
-			parent = createPlaceholder(
-				parent,
-				null /*child.name*/,
-				relative,
-			)
+            // signal/memo/external/user provided function
+            // needs placeholder to stay in position
+            parent = createPlaceholder(
+                parent,
+                null /*child.name*/,
+                relative,
+            );
 
-			// maybe a signal so needs an effect
+            // maybe a signal so needs an effect
 
-			renderEffect(() => {
-				node = createChildren(parent, child(), true)
-			})
-			/**
-			 * A placeholder is created and added to the document but doesnt
-			 * form part of the children. The placeholder needs to be
-			 * returned so it forms part of the group of children. If
-			 * children are moved and the placeholder is not moved with
-			 * them, then, whenever children update these will be at the
-			 * wrong place. wrong place: where the placeholder is and not
-			 * where the children were moved to
-			 */
-			return [node, parent]
-		}
+            renderEffect(() => {
+                node = createChildren(parent, child(), true);
+            });
+            /**
+             * A placeholder is created and added to the document but doesnt
+             * form part of the children. The placeholder needs to be
+             * returned so it forms part of the group of children. If
+             * children are moved and the placeholder is not moved with
+             * them, then, whenever children update these will be at the
+             * wrong place. wrong place: where the placeholder is and not
+             * where the children were moved to
+             */
+            return [node, parent];
+        }
 
-		case 'object': {
-			// children/fragments
-			if (isArray(child)) {
-				if (child.length === 1) {
-					return createChildren(parent, child[0], relative)
-				}
-				return child.map(child =>
-					createChildren(parent, child, relative),
-				)
-			}
+        case 'object': {
+            // children/fragments
+            if (isArray(child)) {
+                if (child.length === 1) {
+                    return createChildren(parent, child[0], relative);
+                }
+                return child.map(child =>
+                    createChildren(parent, child, relative),
+                );
+            }
 
-			// Node/DocumentFragment
-			if (child instanceof Node) {
-				/**
-				 * DocumentFragment are special as only the children get added
-				 * to the document and the document becomes empty. If we dont
-				 * insert them 1 by 1 then we wont have a reference to them
-				 * for deletion on cleanup with node.remove()
-				 */
-				if (child instanceof DocumentFragment) {
-					return createChildren(
-						parent,
-						toArray(child.childNodes),
-						relative,
-					)
-				}
-				return insertNode(parent, child, relative)
-			}
+            // Node/DocumentFragment
+            if (child instanceof Node) {
+                /**
+                 * DocumentFragment are special as only the children get added
+                 * to the document and the document becomes empty. If we dont
+                 * insert them 1 by 1 then we wont have a reference to them
+                 * for deletion on cleanup with node.remove()
+                 */
+                if (child instanceof DocumentFragment) {
+                    return createChildren(
+                        parent,
+                        toArray(child.childNodes),
+                        relative,
+                    );
+                }
+                return insertNode(parent, child, relative);
+            }
 
-			/**
-			 * The value is `null`, as in {null} or like a show returning
-			 * `null` on the falsy case
-			 */
-			if (child === null) {
-				return null
-			}
+            /**
+             * The value is `null`, as in {null} or like a show returning
+             * `null` on the falsy case
+             */
+            if (child === null) {
+                return null;
+            }
 
-			// async components
-			if ('then' in child) {
-				const [value, setValue] = signal(null)
-				/**
-				 * If the result of the promise is a function it runs it with
-				 * an owner. Else it will just use the return value
-				 */
-				const owned = withOwner()
-				const onResult = r =>
-					parent.isConnected && setValue(isFunction(r) ? owned(r) : r)
+            // async components
+            if ('then' in child) {
+                const [value, setValue] = signal(null);
+                /**
+                 * If the result of the promise is a function it runs it with
+                 * an owner. Else it will just use the return value
+                 */
+                const owned = withOwner();
+                const onResult = r =>
+                    parent.isConnected && setValue(isFunction(r) ? owned(r) : r);
 
-				child.then(onResult).catch(onResult)
-				return createChildren(parent, value, relative)
-			}
+                child.then(onResult).catch(onResult);
+                return createChildren(parent, value, relative);
+            }
 
-			// iterable/Map/Set/NodeList
-			if (iterator in child) {
-				return createChildren(
-					parent,
-					toArray(child.values()),
-					relative,
-				)
-			}
+            // iterable/Map/Set/NodeList
+            if (iterator in child) {
+                return createChildren(
+                    parent,
+                    toArray(child.values()),
+                    relative,
+                );
+            }
 
-			// object.toString fancy objects
-			return createChildren(
-				parent,
-				// object.create(null) would fail to convert to string
-				'toString' in child ? child.toString() : stringify(child),
-				relative,
-			)
-		}
-		case 'undefined': {
-			return null
-		}
-		default: {
-			// boolean/bigint/symbol/catch all
-			// toString() is needed for `Symbol`
-			return insertNode(
-				parent,
-				createTextNode(child.toString()),
-				relative,
-			)
-		}
-	}
+            // object.toString fancy objects
+            return createChildren(
+                parent,
+                // object.create(null) would fail to convert to string
+                'toString' in child ? child.toString() : stringify(child),
+                relative,
+            );
+        }
+        case 'undefined': {
+            return null;
+        }
+        default: {
+            // boolean/bigint/symbol/catch all
+            // toString() is needed for `Symbol`
+            return insertNode(
+                parent,
+                createTextNode(child.toString()),
+                relative,
+            );
+        }
+    }
 }
 
 /**
@@ -394,17 +386,17 @@ function createChildren(parent, child, relative) {
  * @param {boolean} [relative]
  * @returns {Elements}
  */
-const createPlaceholder = (parent, text, relative) =>
-	/* dev
-	return insertNode(
-		parent,
-		document.createComment(
-			(text || '') + (relative ? ' relative' : ''),
-		),
-		relative,
-	)
-	*/
-	insertNode(parent, createTextNode(''), relative)
+const createPlaceholder = (parent: Elements, text: unknown, relative?: boolean): Elements =>
+    /* dev
+    return insertNode(
+        parent,
+        document.createComment(
+            (text || '') + (relative ? ' relative' : ''),
+        ),
+        relative,
+    )
+    */
+    insertNode(parent, createTextNode(''), relative);
 
 /**
  * Adds the element to the document
@@ -414,65 +406,65 @@ const createPlaceholder = (parent, text, relative) =>
  * @param {boolean} [relative]
  * @returns {Elements}
  */
-function insertNode(parent, node, relative) {
-	// special case `head`
-	if (parent === document.head) {
-		const querySelector = parent.querySelector.bind(parent)
-		const name = node.tagName
+function insertNode(parent: Elements, node: Elements, relative?: boolean): Elements {
+    // special case `head`
+    if (parent === document.head) {
+        const querySelector = parent.querySelector.bind(parent);
+        const name = node.tagName;
 
-		// search for tags that should be unique
-		let prev
-		if (name === 'TITLE') {
-			prev = querySelector('title')
-		} else if (name === 'META') {
-			prev =
-				querySelector(
-					'meta[name="' + node.getAttribute('name') + '"]',
-				) ||
-				querySelector(
-					'meta[property="' + node.getAttribute('property') + '"]',
-				)
-		} else if (name === 'LINK' && node.rel === 'canonical') {
-			prev = querySelector('link[rel="canonical"]')
-		}
+        // search for tags that should be unique
+        let prev;
+        if (name === 'TITLE') {
+            prev = querySelector('title');
+        } else if (name === 'META') {
+            prev =
+                querySelector(
+                    'meta[name="' + node.getAttribute('name') + '"]',
+                ) ||
+                querySelector(
+                    'meta[property="' + node.getAttribute('property') + '"]',
+                );
+        } else if (name === 'LINK' && node.rel === 'canonical') {
+            prev = querySelector('link[rel="canonical"]');
+        }
 
-		// replace old node if there's any
-		prev ? prev.replaceWith(node) : parent.appendChild(node)
-	} else {
-		relative ? parent.before(node) : parent.appendChild(node)
-	}
+        // replace old node if there's any
+        prev ? prev.replaceWith(node) : parent.appendChild(node);
+    } else {
+        relative ? parent.before(node) : parent.appendChild(node);
+    }
 
-	nodeCleanup(node)
+    nodeCleanup(node);
 
-	return node
+    return node;
 }
 
 // nodes cleanup
 
-const { get: nodeCleanupStore } = weakStore()
+const { get: nodeCleanupStore } = weakStore();
 /**
  * Adds an element for cleanup
  *
  * @param {Elements} node
  */
-function nodeCleanup(node) {
-	const own = owner()
-	// null owners means its never disposed
-	if (own) {
-		const nodes = nodeCleanupStore(own, () => [])
+function nodeCleanup(node: Elements) {
+    const own = owner();
+    // null owners means its never disposed
+    if (own) {
+        const nodes = nodeCleanupStore(own, () => []);
 
-		if (nodes.length === 0) {
-			cleanup(() => {
-				// reverse to remove parent first
-				for (const node of nodes.reverse()) {
-					node.remove()
-				}
-				nodes.length = 0
-			})
-		}
+        if (nodes.length === 0) {
+            cleanup(() => {
+                // reverse to remove parent first
+                for (const node of nodes.reverse()) {
+                    node.remove();
+                }
+                nodes.length = 0;
+            });
+        }
 
-		nodes.push(node)
-	}
+        nodes.push(node);
+    }
 }
 
 // RENDERING
@@ -488,33 +480,31 @@ function nodeCleanup(node) {
  * @returns {Function} Disposer
  * @url https://pota.quack.uy/render
  */
-export function render(children, parent, options = empty()) {
-	const dispose = root(dispose => {
-		insert(children, parent, options)
-		return dispose
-	})
+export function render(children: any, parent?: Elements | null | undefined, options: { clear?: boolean; relative?: boolean } = empty()) {
+    const dispose = root(dispose => {
+        insert(children, parent, options);
+        return dispose;
+    });
 
-	// run dispose when the parent scope disposes
-	cleanup(dispose)
+    // run dispose when the parent scope disposes
+    cleanup(dispose);
 
-	return dispose
+    return dispose;
 }
 
 /**
  * @param {any} children - Thing to render
- * @param {Elements | null | undefined} [parent] - Mount point,
- *   defaults to `document.body`
- * @param {{ clear?: boolean; relative?: boolean }} [options] -
- *   Mounting options
+ * @param {Elements | null | undefined} [parent] - Mount point, defaults to `document.body`
+ * @param {{ clear?: boolean; relative?: boolean }} [options] -  Mounting options
  */
-function insert(children, parent, options = empty()) {
-	if (options.clear && parent) parent.textContent = ''
+function insert(children: any, parent?: Elements | null | undefined, options: { clear?: boolean; relative?: boolean } = empty()) {
+    if (options.clear && parent) parent.textContent = '';
 
-	return createChildren(
-		parent || document.body,
-		isComponentable(children) ? Factory(children) : children,
-		options.relative,
-	)
+    return createChildren(
+        parent || document.body,
+        isComponentable(children) ? Factory(children) : children,
+        options.relative,
+    );
 }
 
 /**
@@ -524,15 +514,15 @@ function insert(children, parent, options = empty()) {
  * @returns {Children}
  * @url https://pota.quack.uy/toHTML
  */
-export const toHTML = children =>
-	/**
-	 * DocumentFragment is transformed to an `Array` of `Node/Element`,
-	 * that way we can keep a reference to the nodes. Because when the
-	 * DocumentFragment is used, it removes the nodes from the
-	 * DocumentFragment and then we will lose the reference.
-	 */
+export const toHTML = (children: Elements): Elements =>
+    /**
+     * DocumentFragment is transformed to an `Array` of `Node/Element`,
+     * that way we can keep a reference to the nodes. Because when the
+     * DocumentFragment is used, it removes the nodes from the
+     * DocumentFragment and then we will lose the reference.
+     */
 
-	flat(toHTMLFragment(children).childNodes)
+    flat(toHTMLFragment(children).childNodes);
 
 /**
  * Creates and returns a DocumentFragment for `children`
@@ -541,11 +531,11 @@ export const toHTML = children =>
  * @returns {DocumentFragment}
  * @url https://pota.quack.uy/toHTML
  */
-export function toHTMLFragment(children) {
-	const fragment = new DocumentFragment()
-	createChildren(fragment, children)
+export function toHTMLFragment(children: Elements): DocumentFragment {
+    const fragment = new DocumentFragment();
+    createChildren(fragment, children);
 
-	return fragment
+    return fragment;
 }
 
 /**
@@ -555,9 +545,9 @@ export function toHTMLFragment(children) {
  * @returns {Signal} Memo
  * @url https://pota.quack.uy/resolve
  */
-export function resolve(fn) {
-	const children = isFunction(fn) ? memo(fn) : () => fn
-	return memo(() => unwrap(children()))
+export function resolve<T>(fn: Function ): Signal<T> {
+    const children = isFunction(fn) ? memo(fn) : () => fn;
+    return memo(() => unwrap(children()));
 }
 
 /**
@@ -566,22 +556,22 @@ export function resolve(fn) {
  * @param {Children} children
  * @returns {Children}
  */
-function unwrap(children) {
-	if (isFunction(children)) {
-		return unwrap(children())
-	}
-	if (isArray(children)) {
-		const childrens:any[] = []
-		for (let child of children) {
-			child = unwrap(child)
-			isArray(child)
-				? childrens.push(...child)
-				: childrens.push(child)
-		}
-		return childrens
-	}
+function unwrap(children: any): any {
+    if (isFunction(children)) {
+        return unwrap(children());
+    }
+    if (isArray(children)) {
+        const childrens: any[] = [];
+        for (let child of children) {
+            child = unwrap(child);
+            isArray(child)
+                ? childrens.push(...child)
+                : childrens.push(child);
+        }
+        return childrens;
+    }
 
-	return children
+    return children;
 }
 
 /**
@@ -592,21 +582,13 @@ function unwrap(children) {
  *   Context
  * @url https://pota.quack.uy/Reactivity/Context
  */
-export function context(defaultValue = undefined) {
-	/** @type {any} */
-	const ctx = Context(defaultValue)
+export function context(defaultValue: unknown = undefined) {
+    /** @type {any} */
+    const ctx = Context(defaultValue);
 
-	/**
-	 * Sets the `value` for the context
-	 *
-	 * @param {object} props
-	 * @param {any} props.value
-	 * @param {Children} [props.children]
-	 * @returns {Children} Children
-	 * @url https://pota.quack.uy/Reactivity/Context
-	 */
-	ctx.Provider = props =>
-		ctx(props.value, () => toHTML(props.children))
+    // @ts-ignore
+    ctx.Provider = props =>
+        ctx(props.value, () => toHTML(props.children));
 
-	return ctx
+    return ctx;
 }

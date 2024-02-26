@@ -1,5 +1,15 @@
 import { entries } from '../utils';
- 
+import { hasProxy, proxy } from './proxy';
+import { Elements } from './intfs';
+import { plugins, pluginsNS, propsPlugin, propsPluginNS } from './plugin';
+import { setStyle, setStyleNS, setVarNS } from './style';
+import { setClass, setClassNS } from './class';
+import { _setProperty, setProperty, setPropertyNS } from './property';
+import { setAttributeNS } from './attribute';
+import { setBoolNS } from './bool';
+import { setOnMount, setRef, setUnmount } from './lifecycles';
+import { eventName, setEventNS, addEventListener } from './event';
+import { setanyProp } from './unknown';
 
 export { propsPlugin, propsPluginNS };
 export { propsProxy } from './proxy';
@@ -19,13 +29,7 @@ propsPluginNS('var', setVarNS, false);
 propsPlugin('class', setClass, false);
 propsPluginNS('class', setClassNS, false);
 
-// forced as properties
-
-for (const item of ['value', 'textContent', 'innerText', 'innerHTML']) {
-	propsPlugin(item, setProperty, false);
-}
-
-// namespaced
+// namespace
 
 propsPluginNS('prop', setPropertyNS, false);
 propsPluginNS('attr', setAttributeNS, false);
@@ -47,23 +51,14 @@ propsPluginNS('ref', setRef, false);
 
 propsPluginNS('on', setEventNS, false);
 
-// catch all
+// forced as properties
 
-import { hasProxy, proxy } from './proxy.js';
-import { Elements } from './intfs';
-import { plugins, pluginsNS, propsPlugin, propsPluginNS } from './plugin.js';
-import { setStyle, setStyleNS, setVarNS } from './style';
-import { setClass, setClassNS } from './class.js';
-import { _setProperty, setProperty, setPropertyNS } from './property';
-import { setAttributeNS } from './attribute';
-import { setBoolNS } from './bool';
-import { setOnMount, setRef, setUnmount } from './lifecycles.js';
-import { eventName, setEventNS } from './event.js';
-import { setanyProp } from './unknown.js';
-
+for (const item of ['value', 'textContent', 'innerText', 'innerHTML']) {
+	propsPlugin(item, setProperty, false);
+}
 
 //Assigns props to an Element
-export function assignProps(node: Elements, props: object) {
+export function assignProps(node: Elements, props: object): void {
 	// document-fragment wont have a localName
 	const isCustomElement = node.localName && node.localName.includes('-');
 
@@ -80,7 +75,7 @@ export function assignProps(node: Elements, props: object) {
 
 		// run plugins
 		if (plugins[name]) {
-			plugins[name](node, name, value, props);
+			plugins[name](node, name, value, props); 
 			continue;
 		}
 
@@ -116,3 +111,4 @@ export function assignProps(node: Elements, props: object) {
 		isCustomElement ? _setProperty(node, name, value) : setanyProp(node, name, value);
 	}
 }
+

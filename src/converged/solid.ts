@@ -1,6 +1,5 @@
-import { markReactive } from '../@main.js'
-
-// abstracts solid-js reactivity
+import { markReactive } from './utils.js';
+export { lazyMemo as memo };
 
 import {
     // signals
@@ -11,112 +10,61 @@ import {
     createRoot,
     createRenderEffect,
     createEffect,
-    batch as _batch,
+
 
     // cleanup/untrack
     onCleanup,
     untrack as _untrack,
 
-    // context
-    useContext,
+
     getOwner,
     runWithOwner,
-} from '../../converged-signals/src/index' // /dist/dev.js
-import { Owner } from '../../converged-signals/src/bubble-reactivity/owner.js'
+} from '../../converged-signals/src/index'; // /dist/dev.js
 
-/**
- * Creates a signal
- *
- * @param {unknown} [initialValue] - Initial value of the signal
- * @param {unknown} [options] - Signal options
- * @returns {[
- * 	Signal,
- * 	Function | ((currentValue: unknown) => unknown),
- * ]}
- *   - Read/write tuple
- */
-export const signal = (initialValue, options?) => {
-    const r = createSignal(initialValue, options)
-    markReactive(r[0])
-    return r
-}
+// Creates a signal
+export const signal = (initialValue?: any, options?: any) => {
+    const r = createSignal(initialValue, options);
+    markReactive(r[0]);
+    return r;
+};
 
-/**
- * Creates a read-only signal from the return value of a function that
- * automatically updates
- *
- * @param {Function} fn - Function to re-run when dependencies change
- * @param {{
- * 	equals?: false | ((prev: unknown, next: unknown) => boolean)
- * }} [options]
- *
- * @returns {Signal} - Read only signal
- */
-const memo = (fn, options) => markReactive(createMemo(fn, options))
+// Creates a read-only signal from the return value of a function that automatically updates
 
-/**
- * Creates a new root
- *
- * @param {(dispose: Function) => any} fn
- * @returns {any}
- */
-export const root = fn => createRoot(dispose => fn(dispose))
+const memo = (fn: Function, options?:
+    { equals?: false | ((prev: unknown, next: unknown) => boolean) }) =>
+    // @ts-ignore
+    markReactive(createMemo(fn, options));
 
-/**
- * Creates a renderEffect
- *
- * @param {Function} fn
- */
-export const renderEffect = fn => {
-    createRenderEffect(fn)
-}
+// Creates a new root
+export const root = (fn: (dispose: Function) => any) => createRoot(dispose => fn(dispose));
 
-/**
- * Creates an effect
- *
- * @param {Function} fn
- */
-export const effect = fn => {
-    createEffect(fn)
-}
+// Creates a renderEffect
+export const renderEffect = <T>(fn: Function) => {
+    const comp=<Number>()=>{};
+    //@ts-ignore
+     createRenderEffect<Number>(comp,fn);
+};
 
-/**
- * Batches changes to signals
- *
- * @param {Function} fn
- * @returns {unknown}
- */
-export const batch = fn => _batch(fn)
+// Creates an effect
+export const effect = <T>(fn: () => T) => {
+    createEffect<T>(fn);
+};
 
-/**
- * Runs a callback on cleanup, returns callback
- *
- * @template T
- * @param {Generic<T>} fn
- * @returns {Generic<T>}
- */
-export const cleanup = fn => {
-    onCleanup(fn)
-    return fn
-}
+// Runs a callback on cleanup, returns callback
+export const cleanup = <T>(fn: () => T) => {
+    onCleanup(fn);
+    return fn;
+};
 
-/**
- * Disables tracking for a function
- *
- * @param {Function} fn - Function to run with tracking disabled
- * @returns {any}
- */
-export const untrack = fn => _untrack(fn)
+// Disables tracking for a function
+//@ts-ignore
+export const untrack = <T>(fn: Function) => _untrack(fn);
 
-/**
- * Creates a context and returns a function to get or set the value
- *
- * @param {unknown} [defaultValue] - Default value for the context
- * @returns {typeof Context} Context
- */
-export function Context(defaultValue = undefined) {
-    const id = Symbol()
-    const context = { id, defaultValue }
+// Creates a context and returns a function to get or set the value
+
+export function Context(defaultValue: any) {
+    const id = Symbol();
+    const context = { id, defaultValue };
 
     /**
      * @overload Gets the context value
@@ -132,71 +80,49 @@ export function Context(defaultValue = undefined) {
      * @param {unknown | undefined} newValue
      * @param {Function | undefined} fn
      */
-    function Context(newValue, fn) {
-        if (newValue === undefined) {
-            return useContext(context)
-        } else {
-            let res
-            renderEffect(() => {
-                untrack(() => {
-                    const owner: any = getOwner() // todo
-                    owner.context = {
-                        ...owner.context,
-                        [id]: newValue,
-                    }
-                    res = fn()
-                })
-            })
+    function Context(newValue?: unknown, fn?: Function) {
 
-            return res
-        }
+        let res;
+        renderEffect(() => {
+            untrack(() => {
+                const owner: any = getOwner(); // todo
+                owner.context = {
+                    ...owner.context,
+                    [id]: newValue,
+                };
+                if (fn)
+                    res = fn();
+            });
+        });
+
+        return res;
     }
-
-    return Context
+    return Context;
 }
 
-/**
- * Lazy version of `memo`, it will run the function only when used
- *
- * @author Fabio Spampinato
- * @param {Function} fn - Function to re-run when dependencies change
- * @param {{
- * 	equals?: false | ((prev: unknown, next: unknown) => boolean)
- * }} [options]
- *
- * @returns {Signal}
- */
-function lazyMemo(fn, options) {
-    const [sleeping, setSleeping] = signal(true)
+// Lazy version of `memo`, it will run the function only when used
+
+
+function lazyMemo(fn: Function, options?: { equals?: false | ((prev: unknown, next: unknown) => boolean) }) {
+    const [sleeping, setSleeping] = signal(true);
     const m = memo(() => {
-        if (sleeping()) return
-        return fn()
-    }, options)
+        if (sleeping()) return;
+        return fn();
+    }, options);
 
     let read = () => {
-        setSleeping(false)
-        read = m
-        return m()
-    }
-    return markReactive(() => read())
+        setSleeping(false);
+        read = m;
+        return m();
+    };
+    return markReactive(() => read());
 }
 
-export { lazyMemo as memo }
-
-/**
- * Returns a function on which you can pass functions to run with the
- * current owner
- *
- * @returns {(fn) => any}
- */
+// Returns a function on which you can pass functions to run with the current owner
 export const withOwner = () => {
-    const owner = getOwner()
-    return fn => runWithOwner(owner, fn)
-}
+    const owner = getOwner();
+    return fn => runWithOwner(owner, fn);
+};
 
-/**
- * Returns current owner
- *
- * @returns {unknown}
- */
-export const owner = getOwner
+// Returns current owner
+export const owner = getOwner;
