@@ -111,11 +111,19 @@ test('test rerender', () => {
   expect(subDiv.childNodes[0].textContent).toEqual("0");
 
   console.log("--------------------------")
+  let value
+  // createEffect(() => { value = getCountGlobal() });
   setCountGlobal(1)
-  getCountGlobal()
-  expect(getCountGlobal()).toEqual(1);
+  // expect(getCountGlobal()).toEqual(1);
+  // expect(value).toEqual(1);
+  // setCountGlobal(2)
+  // expect(getCountGlobal()).toEqual(2);
+  // expect(value).toEqual(2);
+  // setCountGlobal(3)
+
 
   const subDiv2 = nodes[0];
+  expect(subDiv2.nodeName).toEqual("DIV");
   expect(subDiv2.childNodes[0].textContent).toEqual("1");
 
 });

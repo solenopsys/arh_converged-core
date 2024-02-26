@@ -45,7 +45,7 @@ describe("State Getter/Setters", () => {
           return `${this.firstName} ${this.lastName}`;
         },
         set fullName(value) {
-          const parts = value.split(" ");
+          const parts = value.spltest(" ");
           this.firstName = parts[0];
           this.lastName = parts[1];
         }

@@ -1,19 +1,19 @@
 
-import * as core from "./converged/reactive/signal";
+import { render } from "solidjs-example/dom/client";
+import { createEffect, createSignal } from "./converged/reactive";
 
 export function MyComponent1(props) {
-  return <div style="border:1px;">
-    OK2
-  </div>;
+  return <div style="border:1px;">  OK2
+ </div>;
 }
 
 
 
 export function MyComponent(props) {
-  const [count, setCount] = core.createSignal(0);
+  const [count, setCount] = createSignal(0);
 
 
-  core.createEffect(() => {
+  createEffect(() => {
     console.log('The count is now', count());
   });
 
@@ -24,6 +24,32 @@ export function MyComponent(props) {
     <MyComponent1></MyComponent1>
   </div>;
 }
+
+export abstract class JSXEXP{
+
+  abstract render()
+
+}
+
+
+export class MyComponent0 extends JSXEXP{
+    [count, setCount] = createSignal(0);
+
+
+  // createEffect(() => {
+  //   console.log('The count is now', count());
+  // });
+
+
+  render(){
+    return <div style="border:1px;">
+    <div>Create div</div><table><td>ok10</td></table>
+    <button onClick={() => setCount(count() + 1)}>Click Me {count()}</button>
+    <MyComponent1></MyComponent1>
+  </div>;
+  } 
+}
+
 
 
 /*

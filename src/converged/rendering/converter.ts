@@ -11,33 +11,47 @@ function insertChild(child: any, dom: DomManipulate, parent: Element) {
     } else if (t === 'function') {
         parent.appendChild(dom.createTextNode(child()));
     } else if (t === 'object') {
-        jxsToDom(child, dom, parent);
+        createNewElement(child, dom, parent);
     } else
         throw new Error('Unsupported type: ' + t);
 }
 
-function createNewElement(obj: Jsxo, dom: DomManipulate, parent: Element): [Element, any] {
+export function createNewElement(obj: Jsxo, dom: DomManipulate, parent: Element) {
     let elementName = obj.elementName;
     let props: any = obj.props;
-    let element;
-
-    const effect = () => {
-        if (typeof elementName === 'function') {
-            const comp: any = elementName({});
+    let element: Element;
+    let firstCall = true;
+    let comp: any;
+    if (typeof elementName === 'function') {
+        const effect = () => {
+            console.log("CREATE EFFECT", firstCall, elementName)
+            if (firstCall) {
+                comp = elementName({}); // создание комопнента а он не должен создаваться
+                console.log("COMPONENT", comp)
+            }
             props = comp.props;
+            const oldElement: Element = element;
             element = dom.createElement(comp.elementName);
-        } else {
-            element = dom.createElement(elementName);
-        }
+            renderJsxToDom(element, props, dom)
+            if (firstCall) {
+                firstCall = false;
+            } else {
+                oldElement.remove()
+                //   parent.appendChild(element)
+            }
+            parent.appendChild(element);
+        };
+        if (firstCall)
+            createEffect(effect)
+    } else {
+        element = dom.createElement(elementName);
+        renderJsxToDom(element, props, dom)
         parent.appendChild(element)
-    };
-
-    createEffect(effect)
-    return [element, props]
+    }
 }
 
-export function jxsToDom(obj: Jsxo, dom: DomManipulate, parent: Element) {
-    const [newElement, props] = createNewElement(obj, dom, parent);
+function renderJsxToDom(newElement: Element, props: any, dom: DomManipulate) {
+
 
     for (let name in props) {
         if (name.startsWith("on")) {

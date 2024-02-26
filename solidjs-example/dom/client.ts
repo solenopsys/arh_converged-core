@@ -416,7 +416,7 @@ function assignProp(node, prop, value, prev, isSVG, skipRef) {
     else if (isCE && !isProp && !isChildProp) node[toPropertyName(prop)] = value;
     else node[propAlias || prop] = value;
   } else {
-    const ns = isSVG && prop.indexOf(":") > -1 && SVGNamespace[prop.split(":")[0]];
+    const ns = isSVG && prop.indexOf(":") > -1 && SVGNamespace[prop.spltest(":")[0]];
     if (ns) setAttributeNS(node, ns, prop, value);
     else setAttribute(node, Aliases[prop] || prop, value);
   }
