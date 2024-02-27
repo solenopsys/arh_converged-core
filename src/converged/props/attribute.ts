@@ -1,5 +1,5 @@
 import { NS } from '../constants';
-import { isNullUndefined, withValue } from '../utils';
+import { isNullUndefined, withValue } from '../uitls/utils';
 import { Elements } from './types';
 
 // NODE ATTRIBUTES

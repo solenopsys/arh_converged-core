@@ -628,10 +628,8 @@ var signal = (initialValue, options) => {
 };
 var root = (fn) => createRoot((dispose) => fn(dispose));
 var renderEffect = (fn) => {
-  const comp = () => {
-    console.log("RENDER EFFECT");
-  };
-  createRenderEffect(comp, fn);
+  console.log("RENDER EFFECT");
+  createRenderEffect(() => fn(), fn);
 };
 var effect = (fn) => {
   createEffect(fn);
@@ -796,7 +794,10 @@ var _setBool = (node, name, value) => !value ? node.removeAttribute(name) : node
 
 // src/converged/props/lifecycles.ts
 var setRef = (node, name, value, props) => value(node);
-var setOnMount = (node, name, value, props) => onMount([value, node]);
+var setOnMount = (node, name, value, props) => {
+  console.log("ON MOUNT");
+  onMount([value, node]);
+};
 var setUnmount = (node, name, value, props) => cleanup(() => value(node));
 
 // src/converged/props/event.ts

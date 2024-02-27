@@ -1,7 +1,7 @@
 
 import { _setProperty } from './property';
 import { _setAttribute } from './attribute';
-import { isNullUndefined, isNotNullObject, withValue } from "../utils"
+import { isNullUndefined, isNotNullObject, withValue } from "../uitls/utils"
 import { Elements } from './types';
 
 export const setanyProp = (node: Elements, name: string, value: any, ns?: string) =>

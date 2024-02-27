@@ -1,5 +1,5 @@
 
-import { empty, microtask } from "../utils"
+import { empty, microtask } from "../uitls/utils"
 import { withOwner } from '../solid';
 
 export const plugins: Record<string, any> = empty();

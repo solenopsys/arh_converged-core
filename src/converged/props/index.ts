@@ -1,4 +1,4 @@
-import { entries } from '../utils';
+import { entries } from '../uitls/utils';
 import { hasProxy, proxy } from './proxy';
 import { Elements } from './types';
 import { plugins, pluginsNS, propsPlugin, propsPluginNS } from './plugin';

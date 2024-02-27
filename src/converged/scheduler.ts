@@ -1,4 +1,4 @@
-import { isArray } from "./utils"
+import { isArray } from "./uitls/utils"
 
 export const call = (fn, ...args) =>
     isArray(fn) ? fn[0](...args, ...fn.slice(1)) : fn(...args)

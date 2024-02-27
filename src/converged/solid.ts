@@ -1,4 +1,4 @@
-import { markReactive } from './utils.js';
+import { markReactive } from './uitls/utils.js';
 export { lazyMemo as memo };
 
 import {
@@ -40,13 +40,13 @@ export const root = (fn: (dispose: Function) => any) => createRoot(dispose => fn
 
 // Creates a renderEffect
 export const renderEffect = <T>(fn: Function) => {
+
  
-    const comp=<Number>()=>{
-         
-    console.log("RENDER EFFECT")
-    };
+ 
+          
+    
     //@ts-ignore
-     createRenderEffect<Number>(comp,fn);
+     createRenderEffect<Number>( () => fn(),fn);
 };
 
 // Creates an effect

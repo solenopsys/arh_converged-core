@@ -3,7 +3,7 @@ import { effect } from '../solid';
 	entries,
 	getValue,
 	isNotNullObject,
-} from   "../utils";
+} from   "../uitls/utils";
 
 import { Elements } from './types';
 

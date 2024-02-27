@@ -24,7 +24,7 @@ import {
     iterator,
     isComponentable,
     markComponent
-} from './utils'
+} from './uitls/utils'
 
 // CONSTANTS
 
@@ -56,7 +56,7 @@ const Components = new Map()
 const WeakComponents = new WeakMap()
 const defaultProps = freeze(empty())
 const useXMLNS = context()
-import { markReactive } from './utils';
+import { markReactive } from './uitls/utils';
 import { Elements } from './props/types'
 import { Signal } from '../../converged-signals/src/index'
 

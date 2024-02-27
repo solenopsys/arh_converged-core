@@ -2,7 +2,7 @@ import { cleanup } from '../solid';
  
 import { Elements } from './types';
 
-import { isFunction, empty } from "../utils"
+import { isFunction, empty } from "../uitls/utils"
 
 
  

@@ -1,5 +1,5 @@
  
-import {empty, keys } from "../utils"
+import {empty, keys } from "../uitls/utils"
 import { Props } from './types';
 
 // Split an object into multiple sub objects
