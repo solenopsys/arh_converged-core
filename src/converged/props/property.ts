@@ -1,6 +1,6 @@
 
 import { isNullUndefined, withValue, emit } from "../utils"
-import { Elements } from './intfs';
+import { Elements } from './types';
 
 export const setPropertyNS = (
 	node: Elements,

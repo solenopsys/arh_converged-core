@@ -2,7 +2,7 @@
 import { _setProperty } from './property';
 import { _setAttribute } from './attribute';
 import { isNullUndefined, isNotNullObject, withValue } from "../utils"
-import { Elements } from './intfs';
+import { Elements } from './types';
 
 export const setanyProp = (node: Elements, name: string, value: any, ns?: string) =>
 	withValue(value, value => _setanyProp(node, name, value, ns));

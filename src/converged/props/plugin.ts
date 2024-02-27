@@ -4,7 +4,7 @@ import { withOwner } from '../solid';
 
 export const plugins: Record<string, any> = empty();
 export const pluginsNS: Record<string, any> = empty();
-import { Elements } from './intfs';
+import { Elements } from './types';
 
 
 // Defines a prop that can be used on any Element

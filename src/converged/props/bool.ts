@@ -1,5 +1,5 @@
  import { withValue } from '../utils';
-import { Elements } from './intfs';
+import { Elements } from './types';
 
 
 export const setBoolNS = (node: Elements, name: string, value: any, props: object, localName: string, ns: string) =>

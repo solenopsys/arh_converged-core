@@ -1,6 +1,6 @@
  
 import {empty, keys } from "../utils"
-import { Props } from './intfs';
+import { Props } from './types';
 
 // Split an object into multiple sub objects
 export function propsSplit(props: Props, ...args: string[]): Props[] {

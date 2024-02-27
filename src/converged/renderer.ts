@@ -39,7 +39,7 @@ import { ready } from './scheduler'
 
 import { assignProps } from './props'
 
-import { Props } from './props/intfs'
+import { Props } from './props/types'
 
 
 // ELEMENTS
@@ -57,7 +57,7 @@ const WeakComponents = new WeakMap()
 const defaultProps = freeze(empty())
 const useXMLNS = context()
 import { markReactive } from './utils';
-import { Elements } from './props/intfs'
+import { Elements } from './props/types'
 import { Signal } from '../../converged-signals/src/index'
 
 /**
@@ -185,6 +185,7 @@ function Factory(value: any) {
  * @returns {Elements} Element
  */
 function createTag(tagName: string, props: Props): Elements {
+    console.log("CREATE TAG",tagName)
     // namespace
     // use props xmlns or special case svg, math, etc in case of missing xmlns attribute
     const ns = props.xmlns || NS[tagName];
@@ -252,6 +253,7 @@ function createChildren(parent: Elements, child: any, relative?: boolean): any {
                 // signal: needs an effect
                 renderEffect(() => {
                     node = child(child => {
+                        console.log("CHILDREN: ",child)
                         /**
                          * Wrap the item with placeholders, to avoid resolving and
                          * for easy re-arrangement

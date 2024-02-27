@@ -1,11 +1,10 @@
 
  
-import { effect } from "solidjs-example/core";
-import { signal } from "./converged/solid";
+
+import { signal,effect } from "./converged/solid";
 
 export function MyComponent1(props) {
-  return <div style="border:1px;">  OK2
- </div>;
+  return <><div style="border:1px;">  OK2</div></> 
 }
 
 

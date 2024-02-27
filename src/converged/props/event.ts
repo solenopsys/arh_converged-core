@@ -1,6 +1,6 @@
 import { cleanup } from '../solid';
  
-import { Elements } from './intfs';
+import { Elements } from './types';
 
 import { isFunction, empty } from "../utils"
 

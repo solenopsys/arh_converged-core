@@ -1,6 +1,6 @@
 import { entries } from '../utils';
 import { hasProxy, proxy } from './proxy';
-import { Elements } from './intfs';
+import { Elements } from './types';
 import { plugins, pluginsNS, propsPlugin, propsPluginNS } from './plugin';
 import { setStyle, setStyleNS, setVarNS } from './style';
 import { setClass, setClassNS } from './class';

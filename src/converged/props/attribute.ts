@@ -1,6 +1,6 @@
 import { NS } from '../constants';
 import { isNullUndefined, withValue } from '../utils';
-import { Elements } from './intfs';
+import { Elements } from './types';
 
 // NODE ATTRIBUTES
 

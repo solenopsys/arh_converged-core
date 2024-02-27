@@ -1,5 +1,4 @@
 // src/converged/constants.ts
-const __DEV__=false;
 var $ = Symbol;
 var $meta = $();
 var $component = $();
@@ -466,10 +465,9 @@ class Computation extends Owner {
 }
 
 // converged-signals/src/store.ts
-var __DEV__2 = false;
-var $RAW = Symbol(__DEV__2 ? "STORE_RAW" : 0);
-var $TRACK = Symbol(__DEV__2 ? "STORE_TRACK" : 0);
-var $PROXY = Symbol(__DEV__2 ? "STORE_PROXY" : 0);
+var $RAW = Symbol(__DEV__ ? "STORE_RAW" : 0);
+var $TRACK = Symbol(__DEV__ ? "STORE_TRACK" : 0);
+var $PROXY = Symbol(__DEV__ ? "STORE_PROXY" : 0);
 var PROXIES = new WeakMap;
 var NODES = [new WeakMap, new WeakMap];
 // converged-signals/src/effect.ts
@@ -613,12 +611,8 @@ function Context(defaultValue) {
   function Context2(newValue, fn) {
     let res;
     renderEffect(() => {
+      console.log("RENDER EFFECT CONTEXT");
       untrack2(() => {
-        const owner5 = getOwner();
-        owner5.context = {
-          ...owner5.context,
-          [id]: newValue
-        };
         if (fn)
           res = fn();
       });
@@ -635,6 +629,7 @@ var signal = (initialValue, options) => {
 var root = (fn) => createRoot((dispose) => fn(dispose));
 var renderEffect = (fn) => {
   const comp = () => {
+    console.log("RENDER EFFECT");
   };
   createRenderEffect(comp, fn);
 };
@@ -911,6 +906,13 @@ var createTextNode = bind("createTextNode");
 var adoptedStyleSheets = document.adoptedStyleSheets;
 
 // src/converged/renderer.ts
+function Component(value, props2 = undefined) {
+  if (value === Fragment) {
+    return props2.children;
+  }
+  Object.freeze(props2);
+  return props2 === undefined ? Factory(value) : markComponent(Factory(value).bind(null, props2));
+}
 var Factory = function(value) {
   if (isComponent(value)) {
     return value;
@@ -954,6 +956,7 @@ var Factory = function(value) {
   return markComponent(component);
 };
 var createTag = function(tagName, props2) {
+  console.log("CREATE TAG", tagName);
   const ns = props2.xmlns || NS[tagName];
   const nsContext = useXMLNS();
   if (ns && ns !== nsContext) {
@@ -983,6 +986,7 @@ var createChildren = function(parent, child, relative) {
       if ($map in child) {
         renderEffect(() => {
           node = child((child2) => {
+            console.log("CHILDREN: ", child2);
             const begin = createPlaceholder(parent, null, true);
             const end = createPlaceholder(parent, null, true);
             return [begin, createChildren(end, child2, true), end];
@@ -1093,649 +1097,47 @@ var Components = new Map;
 var WeakComponents = new WeakMap;
 var defaultProps = freeze(empty());
 var useXMLNS = context();
+var Fragment = () => {
+};
 var createPlaceholder = (parent, text, relative) => insertNode(parent, createTextNode(""), relative);
 var { get: nodeCleanupStore } = weakStore();
 var toHTML = (children) => flat(toHTMLFragment(children).childNodes);
 
-// solidjs-example/reactive/signal.ts
-function createSignal2(value, options) {
-  options = options ? Object.assign({}, signalOptions, options) : signalOptions;
-  const s = {
-    value,
-    observers: null,
-    observerSlots: null,
-    comparator: options.equals || undefined
-  };
-  if ("_SOLID_DEV_") {
-    if (options.name)
-      s.name = options.name;
-    if (DevHooks.afterCreateSignal)
-      DevHooks.afterCreateSignal(s);
-    if (!options.internal)
-      registerGraph(s);
-  }
-  const setter = (value2) => {
-    if (typeof value2 === "function") {
-      if (Transition && Transition.running && Transition.sources.has(s))
-        value2 = value2(s.tValue);
-      else
-        value2 = value2(s.value);
-    }
-    return writeSignal(s, value2);
-  };
-  return [readSignal.bind(s), setter];
-}
-function createRenderEffect2(fn, value, options) {
-  const c = createComputation(fn, value, false, STALE, options);
-  if (Scheduler && Transition && Transition.running)
-    Updates.push(c);
-  else
-    updateComputation(c);
-}
-function createMemo2(fn, value, options) {
-  options = options ? Object.assign({}, signalOptions, options) : signalOptions;
-  const c = createComputation(fn, value, true, 0, options);
-  c.observers = null;
-  c.observerSlots = null;
-  c.comparator = options.equals || undefined;
-  if (Scheduler && Transition && Transition.running) {
-    c.tState = STALE;
-    Updates.push(c);
-  } else
-    updateComputation(c);
-  return readSignal.bind(c);
-}
-function untrack3(fn) {
-  if (!ExternalSourceConfig && Listener === null)
-    return fn();
-  const listener = Listener;
-  Listener = null;
-  try {
-    if (ExternalSourceConfig)
-      return ExternalSourceConfig.untrack(fn);
-    return fn();
-  } finally {
-    Listener = listener;
-  }
-}
-function onCleanup2(fn) {
-  if (Owner2 === null)
-    console.warn("cleanups created outside a `createRoot` or `render` will never be run");
-  else if (Owner2.cleanups === null)
-    Owner2.cleanups = [fn];
-  else
-    Owner2.cleanups.push(fn);
-  return fn;
-}
-function startTransition(fn) {
-  if (Transition && Transition.running) {
-    fn();
-    return Transition.done;
-  }
-  const l = Listener;
-  const o = Owner2;
-  return Promise.resolve().then(() => {
-    Listener = l;
-    Owner2 = o;
-    let t;
-    if (Scheduler || SuspenseContext) {
-      t = Transition || (Transition = {
-        sources: new Set,
-        effects: [],
-        promises: new Set,
-        disposed: new Set,
-        queue: new Set,
-        running: true
-      });
-      t.done || (t.done = new Promise((res) => t.resolve = res));
-      t.running = true;
-    }
-    runUpdates(fn, false);
-    Listener = Owner2 = null;
-    return t ? t.done : undefined;
-  });
-}
-function registerGraph(value) {
-  if (!Owner2)
-    return;
-  if (Owner2.sourceMap)
-    Owner2.sourceMap.push(value);
-  else
-    Owner2.sourceMap = [value];
-  value.graph = Owner2;
-}
-function createContext(defaultValue, options) {
-  const id = Symbol("context");
-  return { id, Provider: createProvider(id, options), defaultValue };
-}
-function children(fn) {
-  const children2 = createMemo2(fn);
-  const memo = createMemo2(() => resolveChildren(children2()), undefined, { name: "children" });
-  memo.toArray = () => {
-    const c = memo();
-    return Array.isArray(c) ? c : c != null ? [c] : [];
-  };
-  return memo;
-}
-function readSignal() {
-  const runningTransition = Transition && Transition.running;
-  if (this.sources && (runningTransition ? this.tState : this.state)) {
-    if ((runningTransition ? this.tState : this.state) === STALE)
-      updateComputation(this);
-    else {
-      const updates = Updates;
-      Updates = null;
-      runUpdates(() => lookUpstream(this), false);
-      Updates = updates;
-    }
-  }
-  if (Listener) {
-    const sSlot = this.observers ? this.observers.length : 0;
-    if (!Listener.sources) {
-      Listener.sources = [this];
-      Listener.sourceSlots = [sSlot];
-    } else {
-      Listener.sources.push(this);
-      Listener.sourceSlots.push(sSlot);
-    }
-    if (!this.observers) {
-      this.observers = [Listener];
-      this.observerSlots = [Listener.sources.length - 1];
-    } else {
-      this.observers.push(Listener);
-      this.observerSlots.push(Listener.sources.length - 1);
-    }
-  }
-  if (runningTransition && Transition.sources.has(this))
-    return this.tValue;
-  return this.value;
-}
-function writeSignal(node, value, isComp) {
-  let current = Transition && Transition.running && Transition.sources.has(node) ? node.tValue : node.value;
-  if (!node.comparator || !node.comparator(current, value)) {
-    if (Transition) {
-      const TransitionRunning = Transition.running;
-      if (TransitionRunning || !isComp && Transition.sources.has(node)) {
-        Transition.sources.add(node);
-        node.tValue = value;
-      }
-      if (!TransitionRunning)
-        node.value = value;
-    } else
-      node.value = value;
-    if (node.observers && node.observers.length) {
-      runUpdates(() => {
-        for (let i = 0;i < node.observers.length; i += 1) {
-          const o = node.observers[i];
-          const TransitionRunning = Transition && Transition.running;
-          if (TransitionRunning && Transition.disposed.has(o))
-            continue;
-          if (TransitionRunning ? !o.tState : !o.state) {
-            if (o.pure)
-              Updates.push(o);
-            else
-              Effects.push(o);
-            if (o.observers)
-              markDownstream(o);
-          }
-          if (!TransitionRunning)
-            o.state = STALE;
-          else
-            o.tState = STALE;
-        }
-        if (Updates.length > 1e6) {
-          Updates = [];
-          if ("_SOLID_DEV_")
-            throw new Error("Potential Infinite Loop Detected.");
-          throw new Error;
-        }
-      }, false);
-    }
-  }
-  return value;
-}
-var updateComputation = function(node) {
-  if (!node.fn)
-    return;
-  cleanNode(node);
-  const time = ExecCount;
-  runComputation(node, Transition && Transition.running && Transition.sources.has(node) ? node.tValue : node.value, time);
-  if (Transition && !Transition.running && Transition.sources.has(node)) {
-    queueMicrotask(() => {
-      runUpdates(() => {
-        Transition && (Transition.running = true);
-        Listener = Owner2 = node;
-        runComputation(node, node.tValue, time);
-        Listener = Owner2 = null;
-      }, false);
-    });
-  }
-};
-var runComputation = function(node, value, time) {
-  let nextValue;
-  const owner6 = Owner2, listener = Listener;
-  Listener = Owner2 = node;
-  try {
-    nextValue = node.fn(value);
-  } catch (err) {
-    if (node.pure) {
-      if (Transition && Transition.running) {
-        node.tState = STALE;
-        node.tOwned && node.tOwned.forEach(cleanNode);
-        node.tOwned = undefined;
-      } else {
-        node.state = STALE;
-        node.owned && node.owned.forEach(cleanNode);
-        node.owned = null;
-      }
-    }
-    node.updatedAt = time + 1;
-    return handleError2(err);
-  } finally {
-    Listener = listener;
-    Owner2 = owner6;
-  }
-  if (!node.updatedAt || node.updatedAt <= time) {
-    if (node.updatedAt != null && "observers" in node) {
-      writeSignal(node, nextValue, true);
-    } else if (Transition && Transition.running && node.pure) {
-      Transition.sources.add(node);
-      node.tValue = nextValue;
-    } else
-      node.value = nextValue;
-    node.updatedAt = time;
-  }
-};
-var createComputation = function(fn, init, pure, state = STALE, options) {
-  const c = {
-    fn,
-    state,
-    updatedAt: null,
-    owned: null,
-    sources: null,
-    sourceSlots: null,
-    cleanups: null,
-    value: init,
-    owner: Owner2,
-    context: Owner2 ? Owner2.context : null,
-    pure
-  };
-  if (Transition && Transition.running) {
-    c.state = 0;
-    c.tState = state;
-  }
-  if (Owner2 === null)
-    console.warn("computations created outside a `createRoot` or `render` will never be disposed");
-  else if (Owner2 !== UNOWNED) {
-    if (Transition && Transition.running && Owner2.pure) {
-      if (!Owner2.tOwned)
-        Owner2.tOwned = [c];
-      else
-        Owner2.tOwned.push(c);
-    } else {
-      if (!Owner2.owned)
-        Owner2.owned = [c];
-      else
-        Owner2.owned.push(c);
-    }
-  }
-  if (options && options.name)
-    c.name = options.name;
-  if (ExternalSourceConfig && c.fn) {
-    const [track2, trigger] = createSignal2(undefined, { equals: false });
-    const ordinary = ExternalSourceConfig.factory(c.fn, trigger);
-    onCleanup2(() => ordinary.dispose());
-    const triggerInTransition = () => startTransition(trigger).then(() => inTransition.dispose());
-    const inTransition = ExternalSourceConfig.factory(c.fn, triggerInTransition);
-    c.fn = (x) => {
-      track2();
-      return Transition && Transition.running ? inTransition.track(x) : ordinary.track(x);
-    };
-  }
-  if ("_SOLID_DEV_")
-    DevHooks.afterCreateOwner && DevHooks.afterCreateOwner(c);
-  return c;
-};
-var runTop2 = function(node) {
-  const runningTransition = Transition && Transition.running;
-  if ((runningTransition ? node.tState : node.state) === 0)
-    return;
-  if ((runningTransition ? node.tState : node.state) === PENDING)
-    return lookUpstream(node);
-  if (node.suspense && untrack3(node.suspense.inFallback))
-    return node.suspense.effects.push(node);
-  const ancestors = [node];
-  while ((node = node.owner) && (!node.updatedAt || node.updatedAt < ExecCount)) {
-    if (runningTransition && Transition.disposed.has(node))
-      return;
-    if (runningTransition ? node.tState : node.state)
-      ancestors.push(node);
-  }
-  for (let i = ancestors.length - 1;i >= 0; i--) {
-    node = ancestors[i];
-    if (runningTransition) {
-      let top = node, prev = ancestors[i + 1];
-      while ((top = top.owner) && top !== prev) {
-        if (Transition.disposed.has(top))
-          return;
-      }
-    }
-    if ((runningTransition ? node.tState : node.state) === STALE) {
-      updateComputation(node);
-    } else if ((runningTransition ? node.tState : node.state) === PENDING) {
-      const updates = Updates;
-      Updates = null;
-      runUpdates(() => lookUpstream(node, ancestors[0]), false);
-      Updates = updates;
-    }
-  }
-};
-var runUpdates = function(fn, init) {
-  if (Updates)
-    return fn();
-  let wait = false;
-  if (!init)
-    Updates = [];
-  if (Effects)
-    wait = true;
-  else
-    Effects = [];
-  ExecCount++;
-  try {
-    const res = fn();
-    completeUpdates(wait);
-    return res;
-  } catch (err) {
-    if (!wait)
-      Effects = null;
-    Updates = null;
-    handleError2(err);
-  }
-};
-var completeUpdates = function(wait) {
-  if (Updates) {
-    if (Scheduler && Transition && Transition.running)
-      scheduleQueue(Updates);
-    else
-      runQueue(Updates);
-    Updates = null;
-  }
-  if (wait)
-    return;
-  let res;
-  if (Transition) {
-    if (!Transition.promises.size && !Transition.queue.size) {
-      const sources = Transition.sources;
-      const disposed = Transition.disposed;
-      Effects.push.apply(Effects, Transition.effects);
-      res = Transition.resolve;
-      for (const e2 of Effects) {
-        "tState" in e2 && (e2.state = e2.tState);
-        delete e2.tState;
-      }
-      Transition = null;
-      runUpdates(() => {
-        for (const d of disposed)
-          cleanNode(d);
-        for (const v of sources) {
-          v.value = v.tValue;
-          if (v.owned) {
-            for (let i = 0, len = v.owned.length;i < len; i++)
-              cleanNode(v.owned[i]);
-          }
-          if (v.tOwned)
-            v.owned = v.tOwned;
-          delete v.tValue;
-          delete v.tOwned;
-          v.tState = 0;
-        }
-        setTransPending(false);
-      }, false);
-    } else if (Transition.running) {
-      Transition.running = false;
-      Transition.effects.push.apply(Transition.effects, Effects);
-      Effects = null;
-      setTransPending(true);
-      return;
-    }
-  }
-  const e = Effects;
-  Effects = null;
-  if (e.length)
-    runUpdates(() => runEffects2(e), false);
-  else if ("_SOLID_DEV_")
-    DevHooks.afterUpdate && DevHooks.afterUpdate();
-  if (res)
-    res();
-};
-var runQueue = function(queue2) {
-  for (let i = 0;i < queue2.length; i++)
-    runTop2(queue2[i]);
-};
-var scheduleQueue = function(queue2) {
-  for (let i = 0;i < queue2.length; i++) {
-    const item = queue2[i];
-    const tasks = Transition.queue;
-    if (!tasks.has(item)) {
-      tasks.add(item);
-      Scheduler(() => {
-        tasks.delete(item);
-        runUpdates(() => {
-          Transition.running = true;
-          runTop2(item);
-        }, false);
-        Transition && (Transition.running = false);
-      });
-    }
-  }
-};
-var lookUpstream = function(node, ignore) {
-  const runningTransition = Transition && Transition.running;
-  if (runningTransition)
-    node.tState = 0;
-  else
-    node.state = 0;
-  for (let i = 0;i < node.sources.length; i += 1) {
-    const source = node.sources[i];
-    if (source.sources) {
-      const state = runningTransition ? source.tState : source.state;
-      if (state === STALE) {
-        if (source !== ignore && (!source.updatedAt || source.updatedAt < ExecCount))
-          runTop2(source);
-      } else if (state === PENDING)
-        lookUpstream(source, ignore);
-    }
-  }
-};
-var markDownstream = function(node) {
-  const runningTransition = Transition && Transition.running;
-  for (let i = 0;i < node.observers.length; i += 1) {
-    const o = node.observers[i];
-    if (runningTransition ? !o.tState : !o.state) {
-      if (runningTransition)
-        o.tState = PENDING;
-      else
-        o.state = PENDING;
-      if (o.pure)
-        Updates.push(o);
-      else
-        Effects.push(o);
-      o.observers && markDownstream(o);
-    }
-  }
-};
-var cleanNode = function(node) {
-  let i;
-  if (node.sources) {
-    while (node.sources.length) {
-      const source = node.sources.pop(), index = node.sourceSlots.pop(), obs = source.observers;
-      if (obs && obs.length) {
-        const n = obs.pop(), s = source.observerSlots.pop();
-        if (index < obs.length) {
-          n.sourceSlots[s] = index;
-          obs[index] = n;
-          source.observerSlots[index] = s;
-        }
-      }
-    }
-  }
-  if (Transition && Transition.running && node.pure) {
-    if (node.tOwned) {
-      for (i = node.tOwned.length - 1;i >= 0; i--)
-        cleanNode(node.tOwned[i]);
-      delete node.tOwned;
-    }
-    reset2(node, true);
-  } else if (node.owned) {
-    for (i = node.owned.length - 1;i >= 0; i--)
-      cleanNode(node.owned[i]);
-    node.owned = null;
-  }
-  if (node.cleanups) {
-    for (i = node.cleanups.length - 1;i >= 0; i--)
-      node.cleanups[i]();
-    node.cleanups = null;
-  }
-  if (Transition && Transition.running)
-    node.tState = 0;
-  else
-    node.state = 0;
-  delete node.sourceMap;
-};
-var reset2 = function(node, top) {
-  if (!top) {
-    node.tState = 0;
-    Transition.disposed.add(node);
-  }
-  if (node.owned) {
-    for (let i = 0;i < node.owned.length; i++)
-      reset2(node.owned[i]);
-  }
-};
-var castError = function(err) {
-  if (err instanceof Error)
-    return err;
-  return new Error(typeof err === "string" ? err : "Unknown error", { cause: err });
-};
-var runErrors = function(err, fns, owner6) {
-  try {
-    for (const f of fns)
-      f(err);
-  } catch (e) {
-    handleError2(e, owner6 && owner6.owner || null);
-  }
-};
-var handleError2 = function(err, owner6 = Owner2) {
-  const fns = ERROR2 && owner6 && owner6.context && owner6.context[ERROR2];
-  const error2 = castError(err);
-  if (!fns)
-    throw error2;
-  if (Effects)
-    Effects.push({
-      fn() {
-        runErrors(error2, fns, owner6);
-      },
-      state: STALE
-    });
-  else
-    runErrors(error2, fns, owner6);
-};
-var resolveChildren = function(children2) {
-  if (typeof children2 === "function" && !children2.length)
-    return resolveChildren(children2());
-  if (Array.isArray(children2)) {
-    const results = [];
-    for (let i = 0;i < children2.length; i++) {
-      const result = resolveChildren(children2[i]);
-      Array.isArray(result) ? results.push.apply(results, result) : results.push(result);
-    }
-    return results;
-  }
-  return children2;
-};
-var createProvider = function(id, options) {
-  return function provider(props2) {
-    let res;
-    createRenderEffect2(() => res = untrack3(() => {
-      Owner2.context = { ...Owner2.context, [id]: props2.value };
-      return children(() => props2.children);
-    }), undefined, options);
-    return res;
-  };
-};
-var equalFn = (a, b) => a === b;
-var $PROXY2 = Symbol("solid-proxy");
-var $TRACK2 = Symbol("solid-track");
-var $DEVCOMP = Symbol("solid-dev-component");
-var signalOptions = { equals: equalFn };
-var ERROR2 = null;
-var runEffects2 = runQueue;
-var STALE = 1;
-var PENDING = 2;
-var UNOWNED = {
-  owned: null,
-  cleanups: null,
-  context: null,
-  owner: null
-};
-var Owner2 = null;
-var Transition = null;
-var Scheduler = null;
-var ExternalSourceConfig = null;
-var Listener = null;
-var Updates = null;
-var Effects = null;
-var ExecCount = 0;
-var DevHooks = {
-  afterUpdate: null,
-  afterCreateOwner: null,
-  afterCreateSignal: null
-};
-var [transPending, setTransPending] = createSignal2(false);
-var SuspenseContext;
-// solidjs-example/reactive/array.ts
-var FALLBACK = Symbol("fallback");
-// solidjs-example/render/Suspense.ts
-var SuspenseListContext = createContext();
 // src/mycomp.tsx
 function MyComponent1(props2) {
-  return jsx("div", {
-    style: "border:1px;",
-    children: "  OK2"
+  return Component(Fragment, {
+    children: Component("div", {
+      style: "border:1px;",
+      children: "  OK2"
+    }, undefined, false, undefined, this)
   }, undefined, false, undefined, this);
 }
 function MyComponent(props2) {
   const [count, setCount] = signal(0);
-  createRenderEffect2(() => {
+  effect(() => {
     console.log("The count is now", count());
   });
-  return jsx("div", {
+  return Component("div", {
     style: "border:1px;",
     children: [
-      jsx("div", {
+      Component("div", {
         children: "Create div"
       }, undefined, false, undefined, this),
-      jsx("table", {
-        children: jsx("td", {
+      Component("table", {
+        children: Component("td", {
           children: "ok10"
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      jsx("button", {
+      Component("button", {
         onClick: () => setCount(count() + 1),
         children: [
           "Click Me ",
           count()
         ]
       }, undefined, true, undefined, this),
-      jsx(MyComponent1, {}, undefined, false, undefined, this)
+      Component(MyComponent1, {}, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
-
-// src/converged/rendering/jsx.ts
-function jsx(type, props2, p2, last, p4, owner6) {
-  return { elementName: type, props: props2 };
-}
-
 // src/index.tsx
 render(MyComponent, document.querySelector("body"));

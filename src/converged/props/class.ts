@@ -5,7 +5,7 @@ import { effect } from '../solid';
 	isNotNullObject,
 } from   "../utils";
 
-import { Elements } from './intfs';
+import { Elements } from './types';
 
 
 export const setClass = (node: Elements, name: string, value: any, props: object) =>

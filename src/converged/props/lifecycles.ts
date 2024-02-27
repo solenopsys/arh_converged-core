@@ -1,6 +1,6 @@
 import { cleanup } from '../solid';
 import { onMount } from '../scheduler';
-import { Elements } from './intfs';
+import { Elements } from './types';
  
 export const setRef = (node: Elements, name: string, value: Function, props: object) => value(node);
 

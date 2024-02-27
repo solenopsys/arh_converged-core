@@ -1,6 +1,6 @@
 import { effect } from '../solid';
 import { isNullUndefined, isNotNullObject, withValue, entries, getValue } from "../utils"
-import { Elements } from './intfs';
+import { Elements } from './types';
 
 export const setStyle = (node: Elements, name: string, value: any, props: object) =>
 	setNodeStyle(node.style, value);
