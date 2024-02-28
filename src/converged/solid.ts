@@ -46,7 +46,7 @@ export const renderEffect = <T>(fn: Function) => {
           
     
     //@ts-ignore
-   //  createRenderEffect<Number>( () => fn(),fn);
+     createRenderEffect<Number>( () => fn(),fn);
 };
 
 // Creates an effect
@@ -88,7 +88,7 @@ export function Context(defaultValue: any) {
 
         let res;
         renderEffect(() => {
-            console.log("RENDER EFFECT CONTEXT")
+            console.log("RENDER EFFECT CONTEXT" ,newValue)
             untrack(() => {
 
                 if (fn)

@@ -612,7 +612,7 @@ function Context(defaultValue) {
   function Context2(newValue, fn) {
     let res;
     renderEffect(() => {
-      console.log("RENDER EFFECT CONTEXT");
+      console.log("RENDER EFFECT CONTEXT", newValue);
       untrack(() => {
         if (fn)
           res = fn();
@@ -629,6 +629,7 @@ var signal = (initialValue, options) => {
 };
 var root = (fn) => createRoot((dispose) => fn(dispose));
 var renderEffect = (fn) => {
+  createRenderEffect(() => fn(), fn);
 };
 var effect = (fn) => {
   createEffect(fn);
@@ -912,6 +913,7 @@ function toHTMLFragment(children2) {
   return fragment;
 }
 function context(defaultValue) {
+  console.log("CONTEXT DEFAULT: ", defaultValue);
   const ctx = Context(defaultValue);
   ctx.Provider = (props2) => ctx(props2.value, () => toHTML(props2.children));
   return ctx;
@@ -1027,9 +1029,6 @@ var functionHandler = function(parent, child, relative) {
   }
   let node;
   if ($map in child) {
-    const compute2 = () => {
-      console.log("COMPUTE");
-    };
     const effect4 = () => {
       node = child((child2) => {
         console.log("CHILDREN: ", child2);
@@ -1038,12 +1037,11 @@ var functionHandler = function(parent, child, relative) {
         return [begin, createChildren(end, child2, true), end];
       });
     };
-    createRenderEffect(compute2, effect4);
+    renderEffect(effect4);
     return node;
   }
   parent = createPlaceholder(parent, null, relative);
   renderEffect(() => {
-    node = createChildren(parent, child(), true);
   });
   return [node, parent];
 };

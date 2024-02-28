@@ -1,7 +1,6 @@
 //  Creates the children for a parent
 
-import { createRenderEffect } from "converged-signals/src";
-import { Elements } from "../props/types";
+ import { Elements } from "../props/types";
 import { renderEffect, signal, withOwner } from "../solid";
 import { isArray, isComponent, isFunction, iterator, stringify, toArray } from "../uitls/utils";
 import { createPlaceholder, insertNode } from "./manipulate";
@@ -112,11 +111,7 @@ function functionHandler(parent: Elements, child: any, relative?: boolean): any 
     // For
     if ($map in child) {
         // signal: needs an effect
-
-        const compute = () => {
-            console.log("COMPUTE")
-
-        }
+ 
         const effect = () => {
             node = child(child => {
                 console.log("CHILDREN: ", child)
@@ -135,8 +130,7 @@ function functionHandler(parent: Elements, child: any, relative?: boolean): any 
             });
 
         }
-        createRenderEffect(
-            compute,
+        renderEffect(
             effect
         )
 

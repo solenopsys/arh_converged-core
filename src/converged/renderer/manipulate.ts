@@ -81,6 +81,7 @@ function unwrap(children: Children): Children {
  * Creates a context and returns a function to get or set the value
  */
 export function context(defaultValue?) {
+    console.log("CONTEXT DEFAULT: " ,defaultValue)
     /** @type {any} */
     const ctx = Context(defaultValue);
 
