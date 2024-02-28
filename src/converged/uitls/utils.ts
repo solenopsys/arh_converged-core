@@ -1,6 +1,6 @@
 
 
-import { $component, $reactive } from '../constants.js'
+import { $component, $reactive } from './constants.js'
 
 import { effect, untrack } from '../solid.js';
  const microtask = queueMicrotask
@@ -28,7 +28,9 @@ export {
     keys,
     emit,
     microtask,
-    makeCallback
+    makeCallback,
+	removeFromArray,
+	groupBy
 }
 
 const emit = (
@@ -53,6 +55,13 @@ const withValue = (value, fn) =>
 	fn[$component] = null
 	return fn
 }
+
+function removeFromArray(array, value) {
+	const index = array.indexOf(value)
+	if (index !== -1) array.splice(index, 1)
+	return array
+}
+
 const isComponent = value =>
     isFunction(value) && $component in value
 
@@ -72,7 +81,8 @@ const isComponentable = value =>
 const empty = Object.create.bind(null, null)
 
 const entries = Object.entries
-
+//@ts-ignore
+const groupBy = Object.groupBy
 const isArray = Array.isArray
 const toArray = Array.from
 const isFunction = value => typeof value === 'function'

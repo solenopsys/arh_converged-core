@@ -46,7 +46,7 @@ export const renderEffect = <T>(fn: Function) => {
           
     
     //@ts-ignore
-     createRenderEffect<Number>( () => fn(),fn);
+   //  createRenderEffect<Number>( () => fn(),fn);
 };
 
 // Creates an effect

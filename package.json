@@ -1,5 +1,6 @@
 {
   "type": "module",
+  "name": "@solenopsys/converged",
   "dependencies": {
     "capnp-ts": "^0.7.0",
     "hyperscript": "^2.0.2",

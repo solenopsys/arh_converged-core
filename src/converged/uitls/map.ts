@@ -1,4 +1,5 @@
 import { Children, Each } from "../props/types";
+import { groupBy, removeFromArray } from "./utils";
 
  
 /**
@@ -84,8 +85,11 @@ export function map(list: Each, callback: Function, sort?: boolean): Function {
 
 		let nextSibling = begin.nextSibling;
 		while (nextSibling !== end) {
-			nodes.push(nextSibling);
-			nextSibling = nextSibling.nextSibling;
+			if(nextSibling){
+				nodes.push(nextSibling);
+				nextSibling = nextSibling.nextSibling;
+			}
+	
 		}
 		nodes.push(end);
 		return nodes;

@@ -1,4 +1,4 @@
-// src/converged/constants.ts
+// src/converged/uitls/constants.ts
 var $ = Symbol;
 var $meta = $();
 var $component = $();
@@ -14,7 +14,7 @@ var NS = {
   xlink: prefix + "1999/xlink"
 };
 
-// src/converged/utils.ts
+// src/converged/uitls/utils.ts
 var markComponent = function(fn) {
   fn[$component] = null;
   return fn;
@@ -60,6 +60,7 @@ var isNullUndefined = (value) => value === undefined || value === null;
 var isComponentable = (value) => !isReactive(value) && (isFunction(value) || !isArray(value) && isNotNullObject(value) && !value.then);
 var empty = Object.create.bind(null, null);
 var entries = Object.entries;
+var groupBy = Object.groupBy;
 var isArray = Array.isArray;
 var toArray = Array.from;
 var isFunction = (value) => typeof value === "function";
@@ -292,7 +293,7 @@ var removeSourceObservers = function(node, index) {
 function isEqual(a, b) {
   return a === b;
 }
-function untrack(fn) {
+function untrack2(fn) {
   if (currentObserver === null)
     return fn();
   return compute(getOwner(), fn, null);
@@ -612,7 +613,7 @@ function Context(defaultValue) {
     let res;
     renderEffect(() => {
       console.log("RENDER EFFECT CONTEXT");
-      untrack2(() => {
+      untrack(() => {
         if (fn)
           res = fn();
       });
@@ -628,8 +629,6 @@ var signal = (initialValue, options) => {
 };
 var root = (fn) => createRoot((dispose) => fn(dispose));
 var renderEffect = (fn) => {
-  console.log("RENDER EFFECT");
-  createRenderEffect(() => fn(), fn);
 };
 var effect = (fn) => {
   createEffect(fn);
@@ -638,48 +637,12 @@ var cleanup = (fn) => {
   onCleanup(fn);
   return fn;
 };
-var untrack2 = (fn) => untrack(fn);
+var untrack = (fn) => untrack2(fn);
 var withOwner = () => {
   const owner5 = getOwner();
   return (fn) => runWithOwner(owner5, fn);
 };
 var owner5 = getOwner;
-
-// src/converged/scheduler.ts
-var reset = function() {
-  queue = [[], [], []];
-  added = false;
-};
-var add = function(priority, fn) {
-  enqueue();
-  queue[priority].push(fn);
-};
-var enqueue = function() {
-  if (!added) {
-    added = true;
-    microtask2(run);
-  }
-};
-var run = function() {
-  const q = queue;
-  reset();
-  for (const fns of q) {
-    for (const fn of fns) {
-      call(fn);
-    }
-  }
-  for (const fn of finally_) {
-    call(fn);
-  }
-};
-var call = (fn, ...args) => isArray(fn) ? fn[0](...args, ...fn.slice(1)) : fn(...args);
-var microtask2 = queueMicrotask;
-var added;
-var queue;
-var finally_ = [];
-reset();
-var onMount = (fn) => add(0, fn);
-var ready = (fn) => add(1, fn);
 
 // src/converged/props/proxy.ts
 var proxies = [];
@@ -792,6 +755,42 @@ var setBoolNS = (node, name, value, props, localName, ns) => setBool(node, local
 var setBool = (node, name, value) => withValue(value, (value2) => _setBool(node, name, value2));
 var _setBool = (node, name, value) => !value ? node.removeAttribute(name) : node.setAttribute(name, "");
 
+// src/converged/scheduler.ts
+var reset = function() {
+  queue = [[], [], []];
+  added = false;
+};
+var add = function(priority, fn) {
+  enqueue();
+  queue[priority].push(fn);
+};
+var enqueue = function() {
+  if (!added) {
+    added = true;
+    microtask2(run);
+  }
+};
+var run = function() {
+  const q = queue;
+  reset();
+  for (const fns of q) {
+    for (const fn of fns) {
+      call(fn);
+    }
+  }
+  for (const fn of finally_) {
+    call(fn);
+  }
+};
+var call = (fn, ...args) => isArray(fn) ? fn[0](...args, ...fn.slice(1)) : fn(...args);
+var microtask2 = queueMicrotask;
+var added;
+var queue;
+var finally_ = [];
+reset();
+var onMount = (fn) => add(0, fn);
+var ready = (fn) => add(1, fn);
+
 // src/converged/props/lifecycles.ts
 var setRef = (node, name, value, props) => value(node);
 var setOnMount = (node, name, value, props) => {
@@ -899,145 +898,45 @@ for (const item of ["value", "textContent", "innerText", "innerHTML"]) {
   propsPlugin(item, setProperty, false);
 }
 
-// src/converged/elements.ts
+// src/converged/uitls/elements.ts
 var bind = (fn) => document[fn].bind(document);
 var createElement = bind("createElement");
 var createElementNS = bind("createElementNS");
 var createTextNode = bind("createTextNode");
 var adoptedStyleSheets = document.adoptedStyleSheets;
 
-// src/converged/renderer.ts
-function Component(value, props2 = undefined) {
-  if (value === Fragment) {
-    return props2.children;
-  }
-  Object.freeze(props2);
-  return props2 === undefined ? Factory(value) : markComponent(Factory(value).bind(null, props2));
+// src/converged/renderer/manipulate.ts
+function toHTMLFragment(children2) {
+  const fragment = new DocumentFragment;
+  createChildren(fragment, children2);
+  return fragment;
 }
-var Factory = function(value) {
-  if (isComponent(value)) {
-    return value;
-  }
-  let component = typeof value === "object" ? WeakComponents.get(value) : Components.get(value);
-  if (component) {
-    return component;
-  }
-  switch (typeof value) {
-    case "string": {
-      component = (props2 = defaultProps) => createTag(value, props2);
-      break;
+function context(defaultValue) {
+  const ctx = Context(defaultValue);
+  ctx.Provider = (props2) => ctx(props2.value, () => toHTML(props2.children));
+  return ctx;
+}
+function nodeCleanup(node) {
+  const own = owner5();
+  if (own) {
+    const nodes = nodeCleanupStore(own, () => []);
+    if (nodes.length === 0) {
+      cleanup(() => {
+        for (const node2 of nodes.reverse()) {
+          node2.remove();
+        }
+        nodes.length = 0;
+      });
     }
-    case "function": {
-      if ($class in value) {
-        component = (props2 = defaultProps) => untrack2(() => {
-          const i = new value;
-          i.ready && ready(i.ready.bind(i));
-          i.cleanup && cleanup(i.cleanup.bind(i));
-          return i.render(props2);
-        });
-        break;
-      }
-      if (isReactive(value)) {
-        component = () => value;
-        break;
-      }
-      component = (props2 = defaultProps) => untrack2(() => value(props2));
-      break;
-    }
-    default: {
-      if (value instanceof Node) {
-        component = (props2 = defaultProps) => createNode(value, props2);
-        break;
-      }
-      component = () => value;
-      break;
-    }
+    nodes.push(node);
   }
-  typeof value === "object" ? WeakComponents.set(value, component) : Components.set(value, component);
-  return markComponent(component);
-};
-var createTag = function(tagName, props2) {
-  console.log("CREATE TAG", tagName);
-  const ns = props2.xmlns || NS[tagName];
-  const nsContext = useXMLNS();
-  if (ns && ns !== nsContext) {
-    return useXMLNS(ns, () => createNode(createElementNS(ns, tagName), props2));
-  }
-  if (nsContext && tagName === "foreignObject") {
-    return useXMLNS(NS.html, () => createNode(createElementNS(nsContext, tagName), props2));
-  }
-  return createNode(nsContext ? createElementNS(nsContext, tagName) : createElement(tagName), props2);
-};
-var createNode = function(node, props2) {
+}
+function createNode(node, props2) {
   assignProps(node, props2);
   createChildren(node, props2.children);
   return node;
-};
-var createChildren = function(parent, child, relative) {
-  switch (typeof child) {
-    case "string":
-    case "number": {
-      return insertNode(parent, createTextNode(child), relative);
-    }
-    case "function": {
-      if (isComponent(child)) {
-        return createChildren(parent, child(), relative);
-      }
-      let node;
-      if ($map in child) {
-        renderEffect(() => {
-          node = child((child2) => {
-            console.log("CHILDREN: ", child2);
-            const begin = createPlaceholder(parent, null, true);
-            const end = createPlaceholder(parent, null, true);
-            return [begin, createChildren(end, child2, true), end];
-          });
-        });
-        return node;
-      }
-      parent = createPlaceholder(parent, null, relative);
-      renderEffect(() => {
-        node = createChildren(parent, child(), true);
-      });
-      return [node, parent];
-    }
-    case "object": {
-      if (isArray(child)) {
-        if (child.length === 1) {
-          return createChildren(parent, child[0], relative);
-        }
-        return child.map((child2) => createChildren(parent, child2, relative));
-      }
-      if (child instanceof Node) {
-        if (child instanceof DocumentFragment) {
-          return createChildren(parent, toArray(child.childNodes), relative);
-        }
-        return insertNode(parent, child, relative);
-      }
-      if (child === null) {
-        return null;
-      }
-      if ("then" in child) {
-        const [value, setValue] = signal(null);
-        const owned = withOwner();
-        const onResult = (r) => parent.isConnected && setValue(isFunction(r) ? owned(r) : r);
-        child.then(onResult).catch(onResult);
-        return createChildren(parent, value, relative);
-      }
-      if (iterator in child) {
-        return createChildren(parent, toArray(child.values()), relative);
-      }
-      return createChildren(parent, "toString" in child ? child.toString() : stringify(child), relative);
-    }
-    case "undefined": {
-      return null;
-    }
-    default: {
-      return insertNode(parent, createTextNode(child.toString()), relative);
-    }
-  }
-};
-var insertNode = function(parent, node, relative) {
+}
+function insertNode(parent, node, relative) {
   if (parent === document.head) {
     const querySelector = parent.querySelector.bind(parent);
     const name = node.tagName;
@@ -1055,54 +954,161 @@ var insertNode = function(parent, node, relative) {
   }
   nodeCleanup(node);
   return node;
-};
-var nodeCleanup = function(node) {
-  const own = owner5();
-  if (own) {
-    const nodes = nodeCleanupStore(own, () => []);
-    if (nodes.length === 0) {
-      cleanup(() => {
-        for (const node2 of nodes.reverse()) {
-          node2.remove();
-        }
-        nodes.length = 0;
-      });
-    }
-    nodes.push(node);
+}
+function createTag(tagName, props2) {
+  console.log("CREATE TAG", tagName);
+  const ns = props2.xmlns || NS[tagName];
+  const nsContext = useXMLNS();
+  if (ns && ns !== nsContext) {
+    return useXMLNS(ns, () => createNode(createElementNS(ns, tagName), props2));
   }
+  if (nsContext && tagName === "foreignObject") {
+    return useXMLNS(NS.html, () => createNode(createElementNS(nsContext, tagName), props2));
+  }
+  return createNode(nsContext ? createElementNS(nsContext, tagName) : createElement(tagName), props2);
+}
+var useXMLNS = context();
+var toHTML = (children2) => flat(toHTMLFragment(children2).childNodes);
+var { get: nodeCleanupStore } = weakStore();
+var createPlaceholder = (parent, text, relative) => insertNode(parent, createTextNode(""), relative);
+
+// src/converged/renderer/children.ts
+function createChildren(parent, child, relative) {
+  switch (typeof child) {
+    case "string":
+    case "number": {
+      return insertNode(parent, createTextNode(child), relative);
+    }
+    case "function": {
+      return functionHandler(parent, child, relative);
+    }
+    case "object": {
+      return objectHandler(parent, child, relative);
+    }
+    case "undefined": {
+      return null;
+    }
+    default: {
+      return insertNode(parent, createTextNode(child.toString()), relative);
+    }
+  }
+}
+var objectHandler = function(parent, child, relative) {
+  if (isArray(child)) {
+    if (child.length === 1) {
+      return createChildren(parent, child[0], relative);
+    }
+    return child.map((child2) => createChildren(parent, child2, relative));
+  }
+  if (child instanceof Node) {
+    if (child instanceof DocumentFragment) {
+      return createChildren(parent, toArray(child.childNodes), relative);
+    }
+    return insertNode(parent, child, relative);
+  }
+  if (child === null) {
+    return null;
+  }
+  if ("then" in child) {
+    const [value, setValue] = signal(null);
+    const owned = withOwner();
+    const onResult = (r) => parent.isConnected && setValue(isFunction(r) ? owned(r) : r);
+    child.then(onResult).catch(onResult);
+    return createChildren(parent, value, relative);
+  }
+  if (iterator in child) {
+    return createChildren(parent, toArray(child.values()), relative);
+  }
+  return createChildren(parent, "toString" in child ? child.toString() : stringify(child), relative);
 };
-function render(children, parent, options = empty()) {
+var functionHandler = function(parent, child, relative) {
+  if (isComponent(child)) {
+    return createChildren(parent, child(), relative);
+  }
+  let node;
+  if ($map in child) {
+    const compute2 = () => {
+      console.log("COMPUTE");
+    };
+    const effect4 = () => {
+      node = child((child2) => {
+        console.log("CHILDREN: ", child2);
+        const begin = createPlaceholder(parent, null, true);
+        const end = createPlaceholder(parent, null, true);
+        return [begin, createChildren(end, child2, true), end];
+      });
+    };
+    createRenderEffect(compute2, effect4);
+    return node;
+  }
+  parent = createPlaceholder(parent, null, relative);
+  renderEffect(() => {
+    node = createChildren(parent, child(), true);
+  });
+  return [node, parent];
+};
+
+// src/converged/renderer/factory.ts
+function Factory(value) {
+  if (isComponent(value)) {
+    return value;
+  }
+  let component = typeof value === "object" ? WeakComponents.get(value) : Components.get(value);
+  if (component) {
+    return component;
+  }
+  switch (typeof value) {
+    case "string": {
+      component = (props2 = defaultProps) => createTag(value, props2);
+      break;
+    }
+    case "function": {
+      if ($class in value) {
+        component = (props2 = defaultProps) => untrack(() => {
+          const i = new value;
+          i.ready && ready(i.ready.bind(i));
+          i.cleanup && cleanup(i.cleanup.bind(i));
+          return i.render(props2);
+        });
+        break;
+      }
+      if (isReactive(value)) {
+        component = () => value;
+        break;
+      }
+      component = (props2 = defaultProps) => untrack(() => value(props2));
+      break;
+    }
+    default: {
+      if (value instanceof Node) {
+        component = (props2 = defaultProps) => createNode(value, props2);
+        break;
+      }
+      component = () => value;
+      break;
+    }
+  }
+  typeof value === "object" ? WeakComponents.set(value, component) : Components.set(value, component);
+  return markComponent(component);
+}
+var Components = new Map;
+var WeakComponents = new WeakMap;
+var defaultProps = freeze(empty());
+
+// src/converged/renderer/renderer.ts
+function render(children3, parent, options = empty()) {
   const dispose = root((dispose2) => {
-    insert(children, parent, options);
+    insert(children3, parent, options);
     return dispose2;
   });
   cleanup(dispose);
   return dispose;
 }
-var insert = function(children, parent, options = empty()) {
+var insert = function(children3, parent, options = empty()) {
   if (options.clear && parent)
     parent.textContent = "";
-  return createChildren(parent || document.body, isComponentable(children) ? Factory(children) : children, options.relative);
+  return createChildren(parent || document.body, isComponentable(children3) ? Factory(children3) : children3, options.relative);
 };
-function toHTMLFragment(children) {
-  const fragment = new DocumentFragment;
-  createChildren(fragment, children);
-  return fragment;
-}
-function context(defaultValue = undefined) {
-  const ctx = Context(defaultValue);
-  ctx.Provider = (props2) => ctx(props2.value, () => toHTML(props2.children));
-  return ctx;
-}
-var Components = new Map;
-var WeakComponents = new WeakMap;
-var defaultProps = freeze(empty());
-var useXMLNS = context();
-var Fragment = () => {
-};
-var createPlaceholder = (parent, text, relative) => insertNode(parent, createTextNode(""), relative);
-var { get: nodeCleanupStore } = weakStore();
-var toHTML = (children) => flat(toHTMLFragment(children).childNodes);
 
 // src/mycomp.tsx
 function MyComponent1(props2) {
@@ -1140,5 +1146,17 @@ function MyComponent(props2) {
     ]
   }, undefined, true, undefined, this);
 }
+
+// src/converged/renderer/component.ts
+function Component(value, props2 = undefined) {
+  if (value === Fragment) {
+    return props2.children;
+  }
+  Object.freeze(props2);
+  return props2 === undefined ? Factory(value) : markComponent(Factory(value).bind(null, props2));
+}
+var Fragment = () => {
+};
+
 // src/index.tsx
 render(MyComponent, document.querySelector("body"));

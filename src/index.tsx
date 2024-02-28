@@ -1,5 +1,5 @@
 
-import { render } from "./converged/renderer";
+import { render } from "./converged/renderer/renderer";
 import { MyComponent } from "./mycomp";
 
 

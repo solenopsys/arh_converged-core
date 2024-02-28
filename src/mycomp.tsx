@@ -31,13 +31,4 @@ export abstract class JSXEXP{
 
 }
 
- 
-
-
-
-/*
-    
-
-<core.For2 start="10"></core.For2>
-<MyComponent1></MyComponent1> */
-
+  

@@ -34,6 +34,7 @@ export type Componenteable =
     | object
     | FunctionConstructor
     | Component
+    
 
 export type GenericObject<T> = {
     [K in keyof T]: T[K]

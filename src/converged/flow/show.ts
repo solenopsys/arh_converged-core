@@ -1,5 +1,5 @@
 import { memo } from '../solid'
-import { resolve } from '../renderer'
+import { resolve } from '../renderer/renderer.js'
 import { getValue, isNullUndefined, makeCallback } from '../uitls/utils.js'
 
 

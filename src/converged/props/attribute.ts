@@ -1,4 +1,4 @@
-import { NS } from '../constants';
+import { NS } from '../uitls/constants';
 import { isNullUndefined, withValue } from '../uitls/utils';
 import { Elements } from './types';
 

@@ -1,6 +1,6 @@
  
 import { memo } from '../solid'
-import { resolve } from '../renderer'
+import { resolve } from '../renderer/renderer.js'
 import { getValue,  makeCallback,isNullUndefined } from '../uitls/utils.js'
 
 

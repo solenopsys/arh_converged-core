@@ -1,5 +1,5 @@
 import {  Componenteable, Props } from "../props/types";
-import { Component } from "../renderer";
+import { Component } from "../renderer/renderer";
 
  
 /**
