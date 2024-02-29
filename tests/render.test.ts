@@ -1,9 +1,11 @@
-import { createEffect, createSignal } from "../src/converged/reactive";
-import { GlobalRegistrator } from "@happy-dom/global-registrator";
-import { test, expect } from 'bun:test';
-import { DomManipulate, render, jsx } from "src/converged/rendering";
 
-GlobalRegistrator.register();
+import { test, expect, beforeAll } from 'bun:test';
+import { jsx } from "src/converged/renderer";
+import { Component } from "src/converged/renderer/component";
+import { render } from "src/converged/renderer/renderer";
+import { effect, signal } from "src/converged/solid";
+
+
 
 
 function InsideTestComponent(props) {
@@ -12,13 +14,13 @@ function InsideTestComponent(props) {
     children: [
       "Inside div"
     ]
-  }, undefined, true, undefined, this);
+  });
 }
 
 
 function TestComponent(props) {
-  const [count, setCount] = createSignal(0);
-  createEffect(() => {
+  const [count, setCount] = signal(1);
+  effect(() => {
     console.log("The count is now", count());
   });
   return jsx("div", {
@@ -26,30 +28,30 @@ function TestComponent(props) {
     children: [
       jsx("div", {
         children: "Create div"
-      }, undefined, false, undefined, this),
+      }),
       jsx("table", {
-        children: jsx("td", {}, undefined, false, undefined, this)
-      }, undefined, false, undefined, this),
+        children: jsx("td", {})
+      }),
       jsx("button", {
         onClick: () => setCount(count() + 1),
         children: [
           "Click Me ",
           count()
         ]
-      }, undefined, false, undefined, this),
-      jsx(InsideTestComponent, {}, undefined, true, undefined, this),
+      }),
+      jsx(InsideTestComponent, {}),
     ]
-  }, undefined, true, undefined, this);
+  });
 }
 
 
 
 test('test render', () => {
-  const dom: DomManipulate = document;
+
   document.body.innerHTML = `<body></body>`;
-  render(TestComponent, "body", dom);
+  render(TestComponent, document.querySelector('body'));
   const div = document.querySelector('div');
-  expect(div.getAttribute("style")).toEqual('border:1px;');
+  expect(div.getAttribute("style")).toEqual('border: 1px;');
   const nodes = div.childNodes;
   expect(nodes.length).toEqual(4);
 
@@ -68,11 +70,11 @@ test('test render', () => {
   expect(button.nodeName).toEqual("BUTTON");
   expect(button.childNodes.length).toEqual(2);
   expect(button.childNodes[0].nodeValue).toEqual("Click Me ");
-  expect(button.childNodes[1].nodeValue).toEqual("0");
+  expect(button.childNodes[1].nodeValue + "").toEqual("1");
 
   const inside: any = nodes[3];
   expect(inside.nodeName).toEqual("DIV");
-  expect(inside.getAttribute("style")).toEqual('border:2px;');
+  expect(inside.getAttribute("style")).toEqual('border: 2px;');
 });
 
 
@@ -80,7 +82,7 @@ let setCountGlobal;
 let getCountGlobal;
 
 function RerenderTest(props) {
-  const [count, setCount] = createSignal(0);
+  const [count, setCount] = signal(1);
   setCountGlobal = setCount;
   getCountGlobal = count;
   return jsx("div", {
@@ -88,42 +90,38 @@ function RerenderTest(props) {
     children: [
       jsx("div", {
         children: count()
-      }, undefined, false, undefined, this),
+      }),
     ]
-  }, undefined, true, undefined, this);
+  });
 }
 
 
 
-test('test rerender', () => {
-  //@ts-ignore
-  const dom: DomManipulate = document;
+test('test rerender', async () => {
   document.body.innerHTML = `<body></body>`;
-  render(RerenderTest, "body", dom);
+  render(RerenderTest, document.querySelector('body'));
   const div = document.querySelector('div');
-  expect(div.getAttribute("style")).toEqual('border:1px;');
+  expect(div.getAttribute("style")).toEqual('border: 1px;');
   const nodes = div.childNodes;
   expect(nodes.length).toEqual(1);
 
   const subDiv = nodes[0];
   expect(subDiv.nodeName).toEqual("DIV");
   expect(subDiv.childNodes.length).toEqual(1);
-  expect(subDiv.childNodes[0].textContent).toEqual("0");
+  expect(subDiv.childNodes[0].textContent + "").toEqual("1");
 
   console.log("--------------------------")
   let value
-  // createEffect(() => { value = getCountGlobal() });
-  setCountGlobal(1)
-  // expect(getCountGlobal()).toEqual(1);
-  // expect(value).toEqual(1);
-  // setCountGlobal(2)
-  // expect(getCountGlobal()).toEqual(2);
-  // expect(value).toEqual(2);
-  // setCountGlobal(3)
+  effect(() => { value = getCountGlobal() });
+  setCountGlobal(2)
+  expect(getCountGlobal()).toEqual(2);
+  await new Promise(setImmediate);
+
+  expect(value).toEqual(2);
 
 
-  const subDiv2 = nodes[0];
-  expect(subDiv2.nodeName).toEqual("DIV");
-  expect(subDiv2.childNodes[0].textContent).toEqual("1");
+    const subDiv2 = nodes[0];
+    expect(subDiv2.nodeName).toEqual("DIV");
+    expect(subDiv2.childNodes[0].textContent+"").toEqual("2");
 
 });
