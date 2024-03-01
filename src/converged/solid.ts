@@ -41,12 +41,14 @@ export const root = (fn: (dispose: Function) => any) => createRoot(dispose => fn
 // Creates a renderEffect
 export const renderEffect = <T>(fn: Function) => {
 
- 
- 
-          
-    
+
+
+
+
     //@ts-ignore
-     createRenderEffect<Number>( () => fn(),fn);
+    createRenderEffect<T>(() => fn(), (fn) => {
+
+    });
 };
 
 // Creates an effect
@@ -88,11 +90,19 @@ export function Context(defaultValue: any) {
 
         let res;
         renderEffect(() => {
-            console.log("RENDER EFFECT CONTEXT" ,newValue)
+            console.log("RENDER EFFECT CONTEXT", newValue)
             untrack(() => {
 
+                const owner = getOwner()
+             ///   console.log("OWNER",owner)
+                //@ts-ignore
+                owner.context = {
+                    //@ts-ignore
+                    ...owner.context,
+                    [id]: newValue,
+                }
                 if (fn)
-                    res = fn();
+                    res = fn()
             });
         });
 

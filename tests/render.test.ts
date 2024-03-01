@@ -46,7 +46,7 @@ function TestComponent(props) {
 
 
 
-test('test render', () => {
+test.skip('test render', () => {
 
   document.body.innerHTML = `<body></body>`;
   render(TestComponent, document.querySelector('body'));

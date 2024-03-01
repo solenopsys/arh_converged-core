@@ -142,6 +142,8 @@ export const createPlaceholder = (parent: Elements, text: string, relative?: boo
 
 // Adds the element to the document
 export function insertNode(parent: Elements, node: Elements, relative?: boolean): Elements {
+
+    console.log("INSERT NODE33")
     // special case `head`
     if (parent === document.head) {
         const querySelector = parent.querySelector.bind(parent);
@@ -187,6 +189,7 @@ export function createTag(tagName: string, props: Props): Elements {
 
     if (ns && ns !== nsContext) {
         // the ns changed, use the new xmlns
+        console.log("CREATE NS")
         return useXMLNS(ns, () =>
             createNode(createElementNS(ns, tagName), props),
         );
@@ -195,11 +198,13 @@ export function createTag(tagName: string, props: Props): Elements {
     // foreignObject is created with current xmlns
     // reset back to html (default browser behaviour)
     if (nsContext && tagName === 'foreignObject') {
+        console.log("CREATE NS foreignObject")
         return useXMLNS(NS.html, () =>
             createNode(createElementNS(nsContext, tagName), props),
         );
     }
 
+    console.log("CREATE NODE")
     return createNode(
         nsContext
             ? createElementNS(nsContext, tagName)

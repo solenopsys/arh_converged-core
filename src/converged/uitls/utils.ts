@@ -3,32 +3,32 @@
 import { $component, $reactive } from './constants.js'
 
 import { effect, untrack } from '../solid.js';
- const microtask = queueMicrotask
+const microtask = queueMicrotask
 
 export {
-    empty,
-    isArray,
-    toArray,
-    isFunction,
-    weakStore,
-    freeze,
-    flat,
-    stringify,
-    iterator,
-    markReactive,
-    isReactive,
-    isComponent,
-    isComponentable,
-    markComponent,
-    isNotNullObject,
-    isNullUndefined,
-    withValue,
-    entries,
-    getValue,
-    keys,
-    emit,
-    microtask,
-    makeCallback,
+	empty,
+	isArray,
+	toArray,
+	isFunction,
+	weakStore,
+	freeze,
+	flat,
+	stringify,
+	iterator,
+	markReactive,
+	isReactive,
+	isComponent,
+	isComponentable,
+	markComponent,
+	isNotNullObject,
+	isNullUndefined,
+	withValue,
+	entries,
+	getValue,
+	keys,
+	emit,
+	microtask,
+	makeCallback,
 	removeFromArray,
 	groupBy
 }
@@ -47,11 +47,11 @@ const getValue = value => {
 const withValue = (value, fn) =>
 	isFunction(value)
 		? effect(() => {
-				fn(getValue(value))
-			})
+			fn(getValue(value))
+		})
 		: fn(value)
- 
-  function markComponent(fn) {
+
+function markComponent(fn) {
 	fn[$component] = null
 	return fn
 }
@@ -63,20 +63,20 @@ function removeFromArray(array, value) {
 }
 
 const isComponent = value =>
-    isFunction(value) && $component in value
+	isFunction(value) && $component in value
 
-      const isNotNullObject = value =>
+const isNotNullObject = value =>
 	value !== null && typeof value === 'object'
 
-      const isNullUndefined = value =>
+const isNullUndefined = value =>
 	value === undefined || value === null
 
 
 const isComponentable = value =>
-    !isReactive(value) &&
-    (isFunction(value) ||
-        // avoid [1,2] and support { toString(){ return "something"} }
-        (!isArray(value) && isNotNullObject(value) && !value.then))
+	!isReactive(value) &&
+	(isFunction(value) ||
+		// avoid [1,2] and support { toString(){ return "something"} }
+		(!isArray(value) && isNotNullObject(value) && !value.then))
 
 const empty = Object.create.bind(null, null)
 
@@ -93,37 +93,37 @@ const stringify = JSON.stringify
 const iterator = Symbol.iterator
 const keys = Object.keys
 
- function markReactive(fn) {
+function markReactive(fn) {
 	fn[$reactive] = null
 	return fn
 }
 
 function weakStore() {
-    const store = new WeakMap()
-    const set = store.set.bind(store)
-    const get = store.get.bind(store)
-    const has = store.has.bind(store)
-    return {
-        store,
-        get: (obj, defaults:any = undefined) => {
-            const o = get(obj)
-            if (o) return o
-            if (defaults !== undefined) {
-                /**
-                 * Default values should be passed as a function, so we dont
-                 * constantly initialize values when giving them
-                 */
-                defaults = defaults()
-                set(obj, defaults)
-                return defaults
-            }
-        },
-        set,
-        has,
-    }
+	const store = new WeakMap()
+	const set = store.set.bind(store)
+	const get = store.get.bind(store)
+	const has = store.has.bind(store)
+	return {
+		store,
+		get: (obj, defaults: any = undefined) => {
+			const o = get(obj)
+			if (o) return o
+			if (defaults !== undefined) {
+				/**
+				 * Default values should be passed as a function, so we dont
+				 * constantly initialize values when giving them
+				 */
+				defaults = defaults()
+				set(obj, defaults)
+				return defaults
+			}
+		},
+		set,
+		has,
+	}
 }
 
- 
+
 // import { untrack } from '../reactivity/primitives/solid.js'
 // import { flat, isArray, isFunction } from '../std/@main.js'
 // import { isReactive } from '../reactivity/isReactive.js'
@@ -137,7 +137,7 @@ function weakStore() {
  * @param {Children} children
  * @returns {Function}
  */
- function makeCallback(children) {
+function makeCallback(children) {
 	/**
 	 * When children is an array, as in >${[0, 1, 2]}< then children
 	 * will end as `[[0, 1, 2]]`, so flat it
@@ -150,41 +150,41 @@ function weakStore() {
 	return !asArray
 		? markComponent((...args) => callbacks(args))
 		: markComponent((...args) =>
-				callbacks.map(callback => callback(args)),
-			)
+			callbacks.map(callback => callback(args)),
+		)
 }
 
 const callback = child =>
 	isFunction(child)
 		? isReactive(child)
 			? args => {
-					/**
-					 * The function inside the `for` is saved in a signal. The
-					 * result of the signal is our callback
-					 *
-					 * ```js
-					 * htmlEffect(
-					 * 	html =>
-					 * 		html`<table>
-					 * 			<tr>
-					 * 				<th>name</th>
-					 * 			</tr>
-					 * 			<for each="${tests}">
-					 * 				${item =>
-					 * 					html`<tr>
-					 * 						<td>${item.name}</td>
-					 * 					</tr>`}
-					 * 			</for>
-					 * 		</table>`,
-					 * )
-					 * ```
-					 */
-					const r = child()
-					return isFunction(r)
-						? isReactive(r)
-							? r()
-							: untrack(() => r(...args))
-						: r
-				}
+				/**
+				 * The function inside the `for` is saved in a signal. The
+				 * result of the signal is our callback
+				 *
+				 * ```js
+				 * htmlEffect(
+				 * 	html =>
+				 * 		html`<table>
+				 * 			<tr>
+				 * 				<th>name</th>
+				 * 			</tr>
+				 * 			<for each="${tests}">
+				 * 				${item =>
+				 * 					html`<tr>
+				 * 						<td>${item.name}</td>
+				 * 					</tr>`}
+				 * 			</for>
+				 * 		</table>`,
+				 * )
+				 * ```
+				 */
+				const r = child()
+				return isFunction(r)
+					? isReactive(r)
+						? r()
+						: untrack(() => r(...args))
+					: r
+			}
 			: args => untrack(() => child(...args))
 		: () => child

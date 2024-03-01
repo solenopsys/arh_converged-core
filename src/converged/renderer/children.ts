@@ -14,6 +14,7 @@ export function createChildren(parent: Elements, child: any, relative?: boolean)
             return insertNode(parent, createTextNode(child), relative);
         }
         case 'function': {
+            console.log("CHILDREN FUNCTION")
             return functionHandler(parent, child, relative)
         }
         case 'object': {
@@ -110,6 +111,7 @@ function functionHandler(parent: Elements, child: any, relative?: boolean): any 
 
     // For
     if ($map in child) {
+        console.log("EFFFECT CHILDREN")
         // signal: needs an effect
  
         const effect = () => {
@@ -146,7 +148,7 @@ function functionHandler(parent: Elements, child: any, relative?: boolean): any 
     );
 
     // maybe a signal so needs an effect
-
+    console.log("EFFECT2 CHILDREN")
     renderEffect(() => {
         node = createChildren(parent, child(), true);
     });

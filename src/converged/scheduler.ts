@@ -45,6 +45,7 @@ reset()
  *   priority run
  */
 function add(priority, fn) {
+    console.log("SHEDULLER ADD")
     enqueue()
     queue[priority].push(fn)
 }
